@@ -1,0 +1,70 @@
+server:
+  port: 8081
+
+
+spring:
+  mvc:
+    path match:
+      matching-strategy: ant_path_matcher
+
+  web:
+    resources:
+      static-locations: file:media, classpath:/static
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 20MB
+
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: true
+    show-sql: true
+    defer-datasource-initialization: true
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      enabled: false
+
+  security:
+    oauth2:
+      client:
+        registration: { }
+        provider: { }
+
+
+  mail:
+    host: localhost
+    port: 1025
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+            required: false
+    default-encoding: UTF-8
+    username: dummy
+    password: dummy
+
+  sql:
+    init:
+      mode: never
+
+
+

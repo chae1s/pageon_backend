@@ -1,0 +1,82 @@
+version: "3.7"
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  redis:
+    image: redis:7.0
+    container_name: redis
+    ports:
+      - "6379:6379"
+  
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    ports: 
+      - "29092:29092"
+    environment: 
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: 'broker, controller'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:29093'
+      KAFKA_LISTENERS: 'PLAINTEXT://kafka:9092,CONTROLLER://kafka:29093,PLAINTEXT_HOST://0.0.0.0:29092'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      CLUSTER_ID: 'Le-JGa41SmG-ypePlOAUPQ'
+      KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
+  kafka-ui: 
+    image: provectuslabs/kafka-ui:latest
+    ports: 
+      - "8989:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    depends_on:
+      - kafka
+
+  influxdb: 
+    image: influxdb:1.8
+    container_name: influxdb
+    ports: 
+      - "8086:8086"
+    environment:
+      - INFLUXDB_ADMIN_USER_PASSWORD=pageon123
+      - INFLUXDB_HTTP_AUTH_ENABLED=false
+      - INFLUXDB_DB=myk6db
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_BASIC_ENABLED=false
+    depends_on: 
+      - influxdb
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes: 
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports: 
+      - "9090:9090"
+    command: # <--- 여기서부터 추가
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--web.enable-remote-write-receiver'
+volumes:
+  mysql_data:
