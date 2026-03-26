@@ -71,7 +71,7 @@ class AuthServiceTest {
         when(redisTemplate.getExpire(eq(refreshToken), any())).thenReturn(3600L);
         when(valueOperations.getAndDelete(refreshToken)).thenReturn(tokenInfo);
 
-        when(userRepository.findByIdAndDeletedAtIsNull(userId)).thenReturn(Optional.of(user));
+        when(userRepository.findWithRolesById(userId)).thenReturn(Optional.of(user));
         when(jwtProvider.generateAccessToken(any(), any(), any())).thenReturn("new-access-token");
         when(jwtProvider.generateRefreshToken(any())).thenReturn("new-refresh-token");
 
@@ -145,7 +145,7 @@ class AuthServiceTest {
         when(redisTemplate.getExpire(eq(refreshToken), any())).thenReturn(3600L);
         when(valueOperations.getAndDelete(refreshToken)).thenReturn(tokenInfo);
 
-        when(userRepository.findByIdAndDeletedAtIsNull(userId)).thenReturn(Optional.empty());
+        when(userRepository.findWithRolesById(userId)).thenReturn(Optional.empty());
 
         //when
         CustomException exception = assertThrows(CustomException.class,

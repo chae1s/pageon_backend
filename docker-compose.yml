@@ -1,4 +1,3 @@
-version: "3.7"
 
 services:
   mysql:
@@ -80,3 +79,5 @@ services:
       - '--web.enable-remote-write-receiver'
 volumes:
   mysql_data:
+    name: "pageon_mysql_data"
+    external: true

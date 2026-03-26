@@ -117,8 +117,15 @@ public class UserService {
             userRoles.add(roleType.toString());
         }
 
+        String targetPath = null;
+        if (userRoles.contains("ROLE_CREATOR")) {
+            targetPath = "/creators/dashboard";
+        } else if (userRoles.contains("ROLE_ADMIN")) {
+            targetPath = "/admin/dashboard";
+        }
 
-        return new JwtTokenResponse(true, accessToken, principalUser.getUsers().getOAuthProvider(), userRoles);
+
+        return new JwtTokenResponse(true, accessToken, principalUser.getUsers().getOAuthProvider(), userRoles, targetPath);
 
     }
 

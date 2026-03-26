@@ -52,7 +52,7 @@ public class AuthService {
             throw new CustomException(ErrorCode.INVALID_TOKEN);
         }
 
-        User user = userRepository.findByIdAndDeletedAtIsNull(tokenInfo.getUserId()).orElseThrow(
+        User user = userRepository.findWithRolesById(tokenInfo.getUserId()).orElseThrow(
                 () -> new CustomException(ErrorCode.USER_NOT_FOUND)
         );
 
@@ -125,7 +125,14 @@ public class AuthService {
                 .map(RoleType::toString)
                 .toList();
 
-        return new JwtTokenResponse(true, accessToken, user.getOAuthProvider(), userRoles);
+        String targetPath = null;
+        if (userRoles.contains("ROLE_CREATOR")) {
+            targetPath = "/creators/dashboard";
+        } else if (userRoles.contains("ROLE_ADMIN")) {
+            targetPath = "/admin/dashboard";
+        }
+
+        return new JwtTokenResponse(true, accessToken, user.getOAuthProvider(), userRoles, targetPath);
 
     }
 
