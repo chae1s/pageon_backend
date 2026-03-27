@@ -4,12 +4,8 @@ import com.pageon.backend.common.enums.SerialDay;
 import com.pageon.backend.common.enums.SeriesStatus;
 import com.pageon.backend.common.utils.PageableUtil;
 import com.pageon.backend.dto.request.ContentRequest;
-import com.pageon.backend.dto.response.ContentResponse;
 import com.pageon.backend.dto.response.CreatorContentResponse;
-import com.pageon.backend.entity.Content;
-import com.pageon.backend.entity.Creator;
-import com.pageon.backend.entity.Webnovel;
-import com.pageon.backend.entity.Webtoon;
+import com.pageon.backend.entity.*;
 import com.pageon.backend.exception.CustomException;
 import com.pageon.backend.exception.ErrorCode;
 import com.pageon.backend.repository.ContentRepository;
@@ -22,7 +18,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -109,7 +106,65 @@ public class CreatorContentService {
 
     }
 
+    public Page<CreatorContentResponse.Simple> getSimpleContents(Long userId, Pageable pageable, String query) {
+        Creator creator = creatorRepository.findByUser_Id(userId).orElseThrow(
+                () -> new CustomException(ErrorCode.CREATOR_NOT_FOUND)
+        );
+
+        Pageable simpleContentPageable = PageableUtil.moreContentPageable(pageable, "publishedAt");
+        Page<Content> contents;
+        if (query == null || query.isEmpty()) {
+            contents = contentRepository.findByCreator_Id(creator.getId(), simpleContentPageable);
+        } else {
+            contents = contentRepository.searchByTitle(creator.getId(), query, simpleContentPageable);
+        }
+
+        return contents.map(CreatorContentResponse.Simple::fromEntity);
+    }
+
+    public CreatorContentResponse.Detail getContent(Long userId, Long contentId) {
+        Creator creator = creatorRepository.findByUser_Id(userId).orElseThrow(
+                () -> new CustomException(ErrorCode.CREATOR_NOT_FOUND)
+        );
+
+        Content content = contentRepository.findByIdAndCreator_Id(contentId, creator.getId()).orElseThrow(
+                () -> new CustomException(ErrorCode.CONTENT_NOT_FOUND)
+        );
+
+        return CreatorContentResponse.Detail.fromEntity(content, joinKeyword(content.getContentKeywords()));
+    }
+
+    private String joinKeyword(List<ContentKeyword> contentKeywords) {
+        List<String> keywords = new ArrayList<>();
+        for (ContentKeyword contentKeyword : contentKeywords) {
+            keywords.add(contentKeyword.getKeyword().getName());
+        }
+
+        return String.join(",", keywords);
+    }
 
 
+    @Transactional
+    public void updateContent(Long userId, Long contentId, ContentRequest.Update request) {
+        Creator creator = creatorRepository.findByUser_Id(userId).orElseThrow(
+                () -> new CustomException(ErrorCode.CREATOR_NOT_FOUND)
+        );
 
+        Content content = contentRepository.findByIdAndCreator_Id(contentId, creator.getId()).orElseThrow(
+                () -> new CustomException(ErrorCode.CONTENT_NOT_FOUND)
+        );
+
+        content.updateContent(request);
+        keywordService.updateContentKeyword(content, request.getKeywords());
+
+        if (request.getCoverImage() != null) {
+            fileUploadService.deleteFile(content.getCover());
+
+            String contentType = (content.getDtype().equals("WEBNOVEL")) ? "webnovels" : "webtoons";
+            String newS3Url = fileUploadService.upload(request.getCoverImage(), String.format("%s/%d", contentType, content.getId()));
+            content.updateCover(newS3Url);
+        }
+
+
+    }
 }

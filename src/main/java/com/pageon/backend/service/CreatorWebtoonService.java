@@ -100,9 +100,7 @@ public class CreatorWebtoonService implements CreatorContentService_1 {
             throw new CustomException(ErrorCode.CREATOR_UNAUTHORIZED_ACCESS);
 
 
-        if (contentUpdateRequest.getTitle() != null || contentUpdateRequest.getDescription() != null || contentUpdateRequest.getSerialDay() != null) {
-            webtoon.updateContentInfo(contentUpdateRequest);
-        }
+
 
         if (contentUpdateRequest.getKeywords() != null) {
 //            List<Keyword> keywords = keywordService.separateKeywords(contentUpdateRequest.getKeywords());

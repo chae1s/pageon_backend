@@ -203,5 +203,113 @@ class KeywordServiceTest {
         
     }
 
+    private ContentKeyword mockContentKeyword(String keywordName) {
+        Keyword keyword = Keyword.builder().name(keywordName).category(mockCategory).build();
+        return ContentKeyword.builder().keyword(keyword).build();
+    }
+
+    @Test
+    @DisplayName("키워드가 변경되면 contentKeyword 업데이트")
+    void updateContentKeywords_whenNewKeywords_shouldUpdate() {
+        // given
+        Content content = mock(Content.class);
+        List<ContentKeyword> existingKeywords = new ArrayList<>(
+                List.of(mockContentKeyword("SF"), mockContentKeyword("AI"))
+        );
+        when(content.getContentKeywords()).thenReturn(existingKeywords);
+        when(keywordRepository.findByName("판타지")).thenReturn(
+                Optional.of(Keyword.builder().name("판타지").build()));
+        when(keywordRepository.findByName("로맨스")).thenReturn(
+                Optional.of(Keyword.builder().name("로맨스").build()));
+
+
+        //when
+        keywordService.updateContentKeyword(content, "판타지,로맨스");
+
+        // then
+        assertEquals(2, content.getContentKeywords().size());
+        assertEquals("판타지", existingKeywords.get(0).getKeyword().getName());
+        assertEquals("로맨스", existingKeywords.get(1).getKeyword().getName());
+    }
+
+    @Test
+    @DisplayName("키워드 일부 변경 시 전체 교체됨")
+    void updateContentKeyword_whenPartiallyChanged_shouldReplaceAll() {
+        // given
+        List<ContentKeyword> existingKeywords = new ArrayList<>(
+                List.of(mockContentKeyword("SF"), mockContentKeyword("AI"))
+        );
+        Content content = mock(Content.class);
+        when(content.getContentKeywords()).thenReturn(existingKeywords);
+
+        when(keywordRepository.findByName("SF")).thenReturn(
+                Optional.of(Keyword.builder().name("SF").build()));
+        when(keywordRepository.findByName("판타지")).thenReturn(
+                Optional.of(Keyword.builder().name("판타지").build()));
+
+        // when
+        keywordService.updateContentKeyword(content, "SF,판타지");
+
+        // then
+        assertEquals(2, existingKeywords.size());
+        List<String> names = existingKeywords.stream()
+                .map(ck -> ck.getKeyword().getName())
+                .toList();
+        assertTrue(names.contains("SF"));
+        assertTrue(names.contains("판타지"));
+        assertFalse(names.contains("AI"));
+    }
+
+    @Test
+    @DisplayName("키워드가 변경되지 않으면 ContentKeyword 업데이트 안 함")
+    void updateContentKeyword_whenKeywordsNotChanged_shouldNotUpdate() {
+        // given
+        List<ContentKeyword> existingKeywords = new ArrayList<>(
+                List.of(mockContentKeyword("SF"), mockContentKeyword("AI"))
+        );
+        Content content = mock(Content.class);
+        when(content.getContentKeywords()).thenReturn(existingKeywords);
+
+        when(keywordRepository.findByName("SF")).thenReturn(
+                Optional.of(Keyword.builder().name("SF").build()));
+        when(keywordRepository.findByName("AI")).thenReturn(
+                Optional.of(Keyword.builder().name("AI").build()));
+
+        // when
+        keywordService.updateContentKeyword(content, "SF,AI");
+
+        // then
+        assertEquals(2, existingKeywords.size());
+        verify(keywordRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("null 키워드 라인이면 키워드 업데이트 안 함")
+    void updateContentKeyword_withNull_shouldNotUpdate() {
+        // given
+        Content content = mock(Content.class);
+
+        // when
+        keywordService.updateContentKeyword(content, null);
+
+        // then
+        verify(content, never()).getContentKeywords();
+        verify(categoryRepository, never()).findById(any());
+    }
+
+    @Test
+    @DisplayName("빈 키워드 라인이면 키워드 업데이트 안 함")
+    void updateContentKeyword_withBlank_shouldNotUpdate() {
+        // given
+        Content content = mock(Content.class);
+
+        // when
+        keywordService.updateContentKeyword(content, "   ");
+
+        // then
+        verify(content, never()).getContentKeywords();
+        verify(categoryRepository, never()).findById(any());
+    }
+
 
 }

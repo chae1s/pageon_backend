@@ -1,5 +1,6 @@
 package com.pageon.backend.dto.request;
 
+import com.pageon.backend.common.enums.SerialDay;
 import com.pageon.backend.common.enums.WorkStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -24,5 +25,16 @@ public class ContentRequest {
         private MultipartFile coverImage;
         private WorkStatus workStatus;
 
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Update {
+        private String title;
+        private String description;
+        private String keywords;
+        private SerialDay serialDay;
+        private MultipartFile coverImage;
     }
 }

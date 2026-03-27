@@ -4,6 +4,7 @@ import com.pageon.backend.common.base.BaseTimeEntity;
 import com.pageon.backend.common.enums.SerialDay;
 import com.pageon.backend.common.enums.SeriesStatus;
 import com.pageon.backend.common.enums.WorkStatus;
+import com.pageon.backend.dto.request.ContentRequest;
 import com.pageon.backend.dto.request.ContentUpdateRequest;
 import jakarta.persistence.*;
 import lombok.*;
@@ -41,7 +42,7 @@ public abstract class Content extends BaseTimeEntity {
     private Creator creator;
 
     @Builder.Default
-    @OneToMany(mappedBy = "content", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "content", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ContentKeyword> contentKeywords = new ArrayList<>();
 
     private String cover;
@@ -76,17 +77,12 @@ public abstract class Content extends BaseTimeEntity {
         this.cover = s3Url;
     }
 
-    public void updateContentInfo(ContentUpdateRequest request) {
-        if (request.getTitle() != null) this.title = request.getTitle();
-        if (request.getDescription() != null)this.description = request.getDescription();
-        if (request.getSerialDay() != null) this.serialDay = SerialDay.valueOf(request.getSerialDay());
+    public void updateContent(ContentRequest.Update request) {
+        this.title = request.getTitle();
+        this.description = request.getDescription();
+        this.serialDay = request.getSerialDay();
     }
 
-    public void updateKeywords(List<Keyword> keywords) {
-        if (keywords != null) {
-
-        }
-    }
 
     public void deleteContent() {
         this.setDeletedAt(LocalDateTime.now());

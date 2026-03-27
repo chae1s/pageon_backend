@@ -36,9 +36,38 @@ public class CreatorContentController {
             @AuthenticationPrincipal PrincipalUser principalUser, @PageableDefault(size = 15) Pageable pageable,
             @RequestParam String seriesStatus, @RequestParam String sort
     ) {
-        Page<CreatorContentResponse.ContentList> contents = creatorContentService.getMyContents(principalUser.getId(), pageable, seriesStatus, sort);
+        Page<CreatorContentResponse.ContentList> contents =
+                creatorContentService.getMyContents(principalUser.getId(), pageable, seriesStatus, sort);
 
         return ResponseEntity.ok(new PageResponse<>(contents));
+    }
+
+    @GetMapping("/simple")
+    public ResponseEntity<PageResponse<CreatorContentResponse.Simple>> getSimpleContents(
+            @AuthenticationPrincipal PrincipalUser principalUser, Pageable pageable, @RequestParam(required = false) String query
+    ) {
+        Page<CreatorContentResponse.Simple> contents = creatorContentService.getSimpleContents(principalUser.getId(), pageable, query);
+
+        return ResponseEntity.ok(new PageResponse<>(contents));
+    }
+
+    @GetMapping("/{contentId}")
+    public ResponseEntity<CreatorContentResponse.Detail> getContent(@AuthenticationPrincipal PrincipalUser principalUser, @PathVariable Long contentId) {
+
+        CreatorContentResponse.Detail content = creatorContentService.getContent(principalUser.getId(), contentId);
+        return ResponseEntity.ok(content);
+    }
+
+    @PatchMapping("/{contentId}")
+    public ResponseEntity<Void> updateContent(
+            @AuthenticationPrincipal PrincipalUser principalUser,
+            @PathVariable Long contentId,
+            @ModelAttribute ContentRequest.Update request
+    ) {
+
+        creatorContentService.updateContent(principalUser.getId(), contentId, request);
+
+        return ResponseEntity.ok().build();
     }
 
 }

@@ -39,6 +39,15 @@ public interface ContentRepository extends JpaRepository<Content, Long> {
             "WHERE c.status = 'COMPLETED' AND c.totalAverageRating >= 8 AND c.deletedAt IS NULL")
     Page<Content> findTopRatedCompleted(Pageable pageable);
 
-    @EntityGraph(attributePaths = {"creator"})
+    @EntityGraph(attributePaths = {"creator", "contentKeywords.keyword"})
     Page<Content> findByCreator_IdAndStatus(Long creatorId, SeriesStatus status, Pageable pageable);
+
+    Page<Content> findByCreator_Id(Long creatorId, Pageable pageable);
+
+    @Query(value = "SELECT DISTINCT c FROM Content c " +
+            "WHERE c.creator.id = :creatorId AND c.title LIKE %:query%")
+    Page<Content> searchByTitle(Long creatorId, String query, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"contentKeywords.keyword"})
+    Optional<Content> findByIdAndCreator_Id(Long contentId, Long userId);
 }

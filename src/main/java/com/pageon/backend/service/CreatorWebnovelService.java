@@ -104,9 +104,6 @@ public class CreatorWebnovelService implements CreatorContentService_1 {
         if (!webnovel.getCreator().getId().equals(creator.getId()))
             throw new CustomException(ErrorCode.CREATOR_UNAUTHORIZED_ACCESS);
 
-        if (contentUpdateRequest.getTitle() != null || contentUpdateRequest.getDescription() != null || contentUpdateRequest.getSerialDay() != null) {
-            webnovel.updateContentInfo(contentUpdateRequest);
-        }
 
         if (contentUpdateRequest.getKeywords() != null) {
 //            List<Keyword> keywords = keywordService.separateKeywords(contentUpdateRequest.getKeywords());
