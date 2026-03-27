@@ -1,8 +1,10 @@
 package com.pageon.backend.repository;
 
+import com.pageon.backend.common.enums.SeriesStatus;
 import com.pageon.backend.entity.Content;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -36,4 +38,7 @@ public interface ContentRepository extends JpaRepository<Content, Long> {
             "JOIN FETCH c.creator " +
             "WHERE c.status = 'COMPLETED' AND c.totalAverageRating >= 8 AND c.deletedAt IS NULL")
     Page<Content> findTopRatedCompleted(Pageable pageable);
+
+    @EntityGraph(attributePaths = {"creator"})
+    Page<Content> findByCreator_IdAndStatus(Long creatorId, SeriesStatus status, Pageable pageable);
 }

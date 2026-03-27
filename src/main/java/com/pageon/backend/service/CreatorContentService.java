@@ -1,7 +1,11 @@
 package com.pageon.backend.service;
 
 import com.pageon.backend.common.enums.SerialDay;
+import com.pageon.backend.common.enums.SeriesStatus;
+import com.pageon.backend.common.utils.PageableUtil;
 import com.pageon.backend.dto.request.ContentRequest;
+import com.pageon.backend.dto.response.ContentResponse;
+import com.pageon.backend.dto.response.CreatorContentResponse;
 import com.pageon.backend.entity.Content;
 import com.pageon.backend.entity.Creator;
 import com.pageon.backend.entity.Webnovel;
@@ -12,6 +16,8 @@ import com.pageon.backend.repository.ContentRepository;
 import com.pageon.backend.repository.CreatorRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -89,6 +95,18 @@ public class CreatorContentService {
         int targetIndex = dayOfWeekValue % 7;
 
         return SerialDay.values()[targetIndex];
+    }
+
+    public Page<CreatorContentResponse.ContentList> getMyContents(Long userId, Pageable pageable, String seriesStatus, String sort) {
+        Creator creator = creatorRepository.findByUser_Id(userId).orElseThrow(
+                () -> new CustomException(ErrorCode.CREATOR_NOT_FOUND)
+        );
+
+        Pageable creatorContentPageable = PageableUtil.creatorContentPageable(pageable, sort);
+        Page<Content> contents = contentRepository.findByCreator_IdAndStatus(creator.getId(), SeriesStatus.valueOf(seriesStatus), creatorContentPageable);
+
+        return contents.map(CreatorContentResponse.ContentList::fromEntity);
+
     }
 
 

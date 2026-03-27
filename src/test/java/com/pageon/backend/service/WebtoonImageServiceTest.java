@@ -63,7 +63,6 @@ class WebtoonImageServiceTest {
         Creator creator = Creator.builder()
                 .id(1L)
                 .penName("필명")
-                .contentType(ContentType.WEBTOON)
                 .agreedToAiPolicy(true)
                 .aiPolicyAgreedAt(LocalDateTime.now())
                 .build();
