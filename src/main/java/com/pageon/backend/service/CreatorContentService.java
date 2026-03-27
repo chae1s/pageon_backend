@@ -1,5 +1,6 @@
 package com.pageon.backend.service;
 
+import com.pageon.backend.common.enums.DeleteStatus;
 import com.pageon.backend.common.enums.SerialDay;
 import com.pageon.backend.common.enums.SeriesStatus;
 import com.pageon.backend.common.utils.PageableUtil;
@@ -8,6 +9,7 @@ import com.pageon.backend.dto.response.CreatorContentResponse;
 import com.pageon.backend.entity.*;
 import com.pageon.backend.exception.CustomException;
 import com.pageon.backend.exception.ErrorCode;
+import com.pageon.backend.repository.ContentDeletionRequestRepository;
 import com.pageon.backend.repository.ContentRepository;
 import com.pageon.backend.repository.CreatorRepository;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,6 +33,7 @@ public class CreatorContentService {
     private final KeywordService keywordService;
     private final FileUploadService fileUploadService;
     private final ContentRepository contentRepository;
+    private final ContentDeletionRequestRepository contentDeletionRequestRepository;
 
     @Transactional
     public void createContent(Long userId, ContentRequest.Create request) {
@@ -100,7 +104,7 @@ public class CreatorContentService {
         );
 
         Pageable creatorContentPageable = PageableUtil.creatorContentPageable(pageable, sort);
-        Page<Content> contents = contentRepository.findByCreator_IdAndStatus(creator.getId(), SeriesStatus.valueOf(seriesStatus), creatorContentPageable);
+        Page<Content> contents = contentRepository.findByCreator_IdAndStatusAndDeletedAtIsNull(creator.getId(), SeriesStatus.valueOf(seriesStatus), creatorContentPageable);
 
         return contents.map(CreatorContentResponse.ContentList::fromEntity);
 
@@ -114,7 +118,7 @@ public class CreatorContentService {
         Pageable simpleContentPageable = PageableUtil.moreContentPageable(pageable, "publishedAt");
         Page<Content> contents;
         if (query == null || query.isEmpty()) {
-            contents = contentRepository.findByCreator_Id(creator.getId(), simpleContentPageable);
+            contents = contentRepository.findByCreator_IdAndDeletedAtIsNull(creator.getId(), simpleContentPageable);
         } else {
             contents = contentRepository.searchByTitle(creator.getId(), query, simpleContentPageable);
         }
@@ -127,7 +131,7 @@ public class CreatorContentService {
                 () -> new CustomException(ErrorCode.CREATOR_NOT_FOUND)
         );
 
-        Content content = contentRepository.findByIdAndCreator_Id(contentId, creator.getId()).orElseThrow(
+        Content content = contentRepository.findByIdAndCreator_IdAndDeletedAtIsNull(contentId, creator.getId()).orElseThrow(
                 () -> new CustomException(ErrorCode.CONTENT_NOT_FOUND)
         );
 
@@ -150,7 +154,7 @@ public class CreatorContentService {
                 () -> new CustomException(ErrorCode.CREATOR_NOT_FOUND)
         );
 
-        Content content = contentRepository.findByIdAndCreator_Id(contentId, creator.getId()).orElseThrow(
+        Content content = contentRepository.findByIdAndCreator_IdAndDeletedAtIsNull(contentId, creator.getId()).orElseThrow(
                 () -> new CustomException(ErrorCode.CONTENT_NOT_FOUND)
         );
 
@@ -165,6 +169,71 @@ public class CreatorContentService {
             content.updateCover(newS3Url);
         }
 
+    }
+
+    public CreatorContentResponse.DeleteContent getDeleteContent(Long userId, Long contentId) {
+        Creator creator = creatorRepository.findByUser_Id(userId).orElseThrow(
+                () -> new CustomException(ErrorCode.CREATOR_NOT_FOUND)
+        );
+
+        Content content = contentRepository.findByIdAndCreator_IdAndDeletedAtIsNull(contentId, creator.getId()).orElseThrow(
+                () -> new CustomException(ErrorCode.CONTENT_NOT_FOUND)
+        );
+
+        return CreatorContentResponse.DeleteContent.fromEntity(content);
+    }
+
+    @Transactional
+    public void requestContentDeletion(Long userId, Long contentId, ContentRequest.Delete request) {
+        Creator creator = creatorRepository.findByUser_Id(userId).orElseThrow(
+                () -> new CustomException(ErrorCode.CREATOR_NOT_FOUND)
+        );
+
+        Content content = contentRepository.findByIdAndCreator_IdAndDeletedAtIsNull(contentId, creator.getId()).orElseThrow(
+                () -> new CustomException(ErrorCode.CONTENT_NOT_FOUND)
+        );
+
+        ContentDeletionRequest deletionRequest = ContentDeletionRequest.builder()
+                .content(content)
+                .creator(creator)
+                .deleteReason(request.getDeleteReason())
+                .reasonDetail(request.getReasonDetail())
+                .deleteStatus(DeleteStatus.PENDING)
+                .requestedAt(LocalDateTime.now())
+                .build();
+
+        content.deletionRequest();
+
+        contentDeletionRequestRepository.save(deletionRequest);
+    }
+
+    public Page<CreatorContentResponse.DeletionList> getMyDeletionRequests(Long userId, Pageable pageable) {
+        Creator creator = creatorRepository.findByUser_Id(userId).orElseThrow(
+                () -> new CustomException(ErrorCode.CREATOR_NOT_FOUND)
+        );
+
+        Page<ContentDeletionRequest> deletionRequests = contentDeletionRequestRepository.findByCreatorId(creator.getId(), pageable);
+
+        return deletionRequests.map(CreatorContentResponse.DeletionList::fromEntity);
+    }
+
+    @Transactional
+    public void cancelDeletionRequest(Long userId, Long deleteId) {
+        Creator creator = creatorRepository.findByUser_Id(userId).orElseThrow(
+                () -> new CustomException(ErrorCode.CREATOR_NOT_FOUND)
+        );
+
+        ContentDeletionRequest deletionRequest = contentDeletionRequestRepository.findByIdAndCreator_Id(deleteId, creator.getId()).orElseThrow(
+                () -> new CustomException(ErrorCode.DELETION_REQUEST_NOT_FOUND)
+        );
+
+        if (deletionRequest.getDeleteStatus() != DeleteStatus.PENDING) {
+            throw new CustomException(ErrorCode.INVALID_CANCEL_DELETE_REQUEST);
+        }
+
+        deletionRequest.getContent().cancelDeletion();
+
+        deletionRequest.cancelDeletion();
 
     }
 }

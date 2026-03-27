@@ -1,5 +1,6 @@
 package com.pageon.backend.dto.request;
 
+import com.pageon.backend.common.enums.DeleteReason;
 import com.pageon.backend.common.enums.SerialDay;
 import com.pageon.backend.common.enums.WorkStatus;
 import lombok.AllArgsConstructor;
@@ -36,5 +37,13 @@ public class ContentRequest {
         private String keywords;
         private SerialDay serialDay;
         private MultipartFile coverImage;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Delete {
+        private DeleteReason deleteReason;
+        private String reasonDetail;
     }
 }

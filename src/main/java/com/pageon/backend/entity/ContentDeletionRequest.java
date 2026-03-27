@@ -1,6 +1,6 @@
 package com.pageon.backend.entity;
 
-import com.pageon.backend.common.enums.ContentType;
+import com.pageon.backend.common.enums.DeleteReason;
 import com.pageon.backend.common.enums.DeleteStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -12,27 +12,33 @@ import java.time.LocalDateTime;
 @Getter
 @Builder
 @DynamicUpdate
-@Table(name = "content_deletes")
+@Table(name = "content_deletion_requests")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-public class ContentDelete {
+public class ContentDeletionRequest {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Enumerated(EnumType.STRING)
-    private ContentType contentType;
-    private Long contentId;
-
+    @ManyToOne
+    @JoinColumn(name = "content_id", nullable = false)
+    private Content content;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "creator_id", nullable = false)
     private Creator creator;
-    private String reason;
+    @Enumerated(EnumType.STRING)
+    private DeleteReason deleteReason;
+    private String reasonDetail;
     @Enumerated(EnumType.STRING)
     private DeleteStatus deleteStatus;
     private LocalDateTime requestedAt;
     private LocalDateTime processedAt;
+
+
+    public void cancelDeletion() {
+        this.deleteStatus = DeleteStatus.CANCELED;
+        this.processedAt = LocalDateTime.now();
+    }
 
 
 }

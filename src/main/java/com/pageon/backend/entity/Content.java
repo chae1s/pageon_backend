@@ -112,4 +112,17 @@ public abstract class Content extends BaseTimeEntity {
     public void updateViewCount() {
         this.viewCount++;
     }
+
+    public void deletionRequest() {
+        this.workStatus = WorkStatus.DELETING;
+    }
+
+    public void deletionCompleted() {
+        this.workStatus = WorkStatus.DELETED;
+        this.setDeletedAt(LocalDateTime.now());
+    }
+
+    public void cancelDeletion() {
+        this.workStatus = WorkStatus.PUBLISHED;
+    }
 }

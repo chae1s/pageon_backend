@@ -1,9 +1,8 @@
 package com.pageon.backend.dto.response;
 
-import com.pageon.backend.common.enums.SerialDay;
-import com.pageon.backend.common.enums.SeriesStatus;
-import com.pageon.backend.common.enums.WorkStatus;
+import com.pageon.backend.common.enums.*;
 import com.pageon.backend.entity.Content;
+import com.pageon.backend.entity.ContentDeletionRequest;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -96,4 +95,45 @@ public class CreatorContentResponse {
         }
     }
 
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class DeleteContent {
+        private Long contentId;
+        private String contentTitle;
+        private String contentType;
+
+        public static DeleteContent fromEntity(Content content) {
+            return DeleteContent.builder()
+                    .contentId(content.getId())
+                    .contentTitle(content.getTitle())
+                    .contentType(content.getDtype())
+                    .build();
+        }
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class DeletionList {
+        private Long id;
+        private String contentTitle;
+        private DeleteReason deleteReason;
+        private String reasonDetail;
+        private LocalDateTime requestedAt;
+        private DeleteStatus deleteStatus;
+
+        public static DeletionList fromEntity(ContentDeletionRequest contentDelete) {
+            return DeletionList.builder()
+                    .id(contentDelete.getId())
+                    .contentTitle(contentDelete.getContent().getTitle())
+                    .deleteReason(contentDelete.getDeleteReason())
+                    .reasonDetail(contentDelete.getReasonDetail())
+                    .requestedAt(contentDelete.getRequestedAt())
+                    .deleteStatus(contentDelete.getDeleteStatus())
+                    .build();
+        }
+    }
 }
