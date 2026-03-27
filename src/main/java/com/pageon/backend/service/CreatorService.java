@@ -44,7 +44,7 @@ public class CreatorService {
 
         if (!creatorRequest.getAgreedToAiPolicy()) throw new CustomException(ErrorCode.AI_POLICY_NOT_AGREED);
 
-        Optional<Creator> optionalCreator = creatorRepository.findByUser(user);
+        Optional<Creator> optionalCreator = creatorRepository.findByUser_Id(userId);
         if (optionalCreator.isEmpty()) {
             // userrole에 ROLE_CREATOR 추가
             UserRole userRole = UserRole.builder()
@@ -57,7 +57,6 @@ public class CreatorService {
             Creator creators = Creator.builder()
                     .user(user)
                     .penName(creatorRequest.getPenName())
-                    .contentType(ContentType.valueOf(creatorRequest.getContentType()))
                     .agreedToAiPolicy(creatorRequest.getAgreedToAiPolicy())
                     .aiPolicyAgreedAt(LocalDateTime.now())
                     .build();

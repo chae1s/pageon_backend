@@ -3,12 +3,14 @@ package com.pageon.backend.entity;
 import com.pageon.backend.common.base.BaseTimeEntity;
 import com.pageon.backend.common.enums.SerialDay;
 import com.pageon.backend.common.enums.SeriesStatus;
+import com.pageon.backend.common.enums.WorkStatus;
 import com.pageon.backend.dto.request.ContentUpdateRequest;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.springframework.cglib.core.Local;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,6 +48,10 @@ public abstract class Content extends BaseTimeEntity {
     // 연재 요일
     @Enumerated(EnumType.STRING)
     private SerialDay serialDay;
+
+    private LocalDate publishedAt;
+    @Enumerated(EnumType.STRING)
+    private WorkStatus workStatus;
 
     // 연재, 완결, 휴재
     @Builder.Default

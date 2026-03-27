@@ -72,7 +72,7 @@ public class InitContentData implements ApplicationRunner {
                 user.updateIdentityVerification(line[3], line[4], birthDate, Gender.valueOf(line[6]), line[7], true, IdentityProvider.DANAL);
                 userRepository.save(user);
 
-                Creator creators = new Creator(line[1], user, ContentType.valueOf(line[2]));
+                Creator creators = new Creator(line[1], user);
                 creatorRepository.save(creators);
 
             }
@@ -135,7 +135,7 @@ public class InitContentData implements ApplicationRunner {
         int i = 1;
         try {
             while ((line = csvReader.readNext()) != null) {
-                Creator creator = creatorRepository.findById(Long.parseLong(line[3])).orElseThrow(() -> new CustomException(ErrorCode.CREATER_NOT_FOUND));
+                Creator creator = creatorRepository.findById(Long.parseLong(line[3])).orElseThrow(() -> new CustomException(ErrorCode.CREATOR_NOT_FOUND));
 
                 String absolutePath = "C:/Users/user/Desktop/project/pageon_images/webnovels/" + line[4];
                 File file = new File(absolutePath);
@@ -181,7 +181,7 @@ public class InitContentData implements ApplicationRunner {
         try {
             while ((line = csvReader.readNext()) != null) {
 
-                Creator creator = creatorRepository.findById(Long.parseLong(line[3])).orElseThrow(() -> new CustomException(ErrorCode.CREATER_NOT_FOUND));
+                Creator creator = creatorRepository.findById(Long.parseLong(line[3])).orElseThrow(() -> new CustomException(ErrorCode.CREATOR_NOT_FOUND));
                 String absolutePath = "C:/Users/user/Desktop/project/pageon_images/webtoons/" + line[4];
                 File file = new File(absolutePath);
                 String s3Url = fileUploadService.localFileUpload(file, String.format("webtoons/%d", i++));

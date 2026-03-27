@@ -7,7 +7,6 @@ import com.pageon.backend.dto.request.ContentCreateRequest;
 import com.pageon.backend.dto.request.ContentDeleteRequest;
 import com.pageon.backend.dto.request.ContentUpdateRequest;
 import com.pageon.backend.dto.response.CreatorContentListResponse;
-import com.pageon.backend.dto.response.CreatorWebnovelResponse;
 import com.pageon.backend.entity.*;
 import com.pageon.backend.exception.CustomException;
 import com.pageon.backend.exception.ErrorCode;
@@ -23,7 +22,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class CreatorWebnovelService implements CreatorContentService {
+public class CreatorWebnovelService implements CreatorContentService_1 {
 
     private final UserRepository userRepository;
     private final WebnovelRepository webnovelRepository;
@@ -40,8 +39,6 @@ public class CreatorWebnovelService implements CreatorContentService {
 
         Creator creator = commonService.findCreatorByUser(user);
 
-        if (creator.getContentType() != ContentType.WEBNOVEL)
-            throw new CustomException(ErrorCode.NOT_CREATOR_OF_WEBNOVEL);
 
         Webnovel webnovel = Webnovel.builder()
                 .title(contentCreateRequest.getTitle())
@@ -112,9 +109,9 @@ public class CreatorWebnovelService implements CreatorContentService {
         }
 
         if (contentUpdateRequest.getKeywords() != null) {
-            List<Keyword> keywords = keywordService.separateKeywords(contentUpdateRequest.getKeywords());
-
-            webnovel.updateKeywords(keywords);
+//            List<Keyword> keywords = keywordService.separateKeywords(contentUpdateRequest.getKeywords());
+//
+//            webnovel.updateKeywords(keywords);
         }
 
         if (contentUpdateRequest.getCoverFile() != null) {

@@ -2,10 +2,13 @@ package com.pageon.backend.service;
 
 
 import com.pageon.backend.entity.Category;
+import com.pageon.backend.entity.Content;
+import com.pageon.backend.entity.ContentKeyword;
 import com.pageon.backend.entity.Keyword;
 import com.pageon.backend.exception.CustomException;
 import com.pageon.backend.exception.ErrorCode;
 import com.pageon.backend.repository.CategoryRepository;
+import com.pageon.backend.repository.ContentKeywordRepository;
 import com.pageon.backend.repository.KeywordRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,7 +23,21 @@ public class KeywordService {
     private final CategoryRepository categoryRepository;
     private static final Long UNCATEGORIZED_CATEGORY_ID = 6L;
 
-    public List<Keyword> separateKeywords(String line) {
+    public void registerContentKeyword(Content content, String keywordLine) {
+        List<Keyword> keywords = separateKeywords(keywordLine);
+
+        for (Keyword keyword : keywords) {
+            ContentKeyword contentKeyword = ContentKeyword.builder()
+                    .content(content)
+                    .keyword(keyword)
+                    .build();
+
+            content.getContentKeywords().add(contentKeyword);
+        }
+
+    }
+
+    private List<Keyword> separateKeywords(String line) {
         if (line == null || line.isBlank()) {
             return new ArrayList<>();
         }

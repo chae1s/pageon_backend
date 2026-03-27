@@ -7,7 +7,6 @@ import com.pageon.backend.dto.request.ContentCreateRequest;
 import com.pageon.backend.dto.request.ContentDeleteRequest;
 import com.pageon.backend.dto.request.ContentUpdateRequest;
 import com.pageon.backend.dto.response.CreatorContentListResponse;
-import com.pageon.backend.dto.response.CreatorWebtoonResponse;
 import com.pageon.backend.entity.*;
 import com.pageon.backend.exception.CustomException;
 import com.pageon.backend.exception.ErrorCode;
@@ -25,7 +24,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class CreatorWebtoonService implements CreatorContentService{
+public class CreatorWebtoonService implements CreatorContentService_1 {
 
     private final UserRepository userRepository;
     private final WebtoonRepository webtoonRepository;
@@ -42,8 +41,6 @@ public class CreatorWebtoonService implements CreatorContentService{
 
         Creator creator = commonService.findCreatorByUser(user);
 
-        if (creator.getContentType() != ContentType.WEBTOON)
-            throw new CustomException(ErrorCode.NOT_CREATOR_OF_WEBTOON);
 
         Webtoon webtoon = Webtoon.builder()
                 .title(contentCreateRequest.getTitle())
@@ -108,9 +105,9 @@ public class CreatorWebtoonService implements CreatorContentService{
         }
 
         if (contentUpdateRequest.getKeywords() != null) {
-            List<Keyword> keywords = keywordService.separateKeywords(contentUpdateRequest.getKeywords());
-
-            webtoon.updateKeywords(keywords);
+//            List<Keyword> keywords = keywordService.separateKeywords(contentUpdateRequest.getKeywords());
+//
+//            webtoon.updateKeywords(keywords);
         }
 
         if (contentUpdateRequest.getCoverFile() != null) {

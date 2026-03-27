@@ -34,11 +34,11 @@ public enum ErrorCode {
     PEN_NAME_REQUIRED("필명은 반드시 입력해야 합니다.", HttpStatus.BAD_REQUEST),
     ALREADY_HAS_CREATOR_ROLE("이미 창작자 권한이 존재합니다.", HttpStatus.BAD_REQUEST),
     AI_POLICY_NOT_AGREED("AI 콘텐츠 등록 약관에 동의하지 않았습니다.", HttpStatus.BAD_REQUEST),
-    CREATER_NOT_FOUND("존재하지 않는 작가입니다.", HttpStatus.NOT_FOUND),
+    CREATOR_NOT_FOUND("존재하지 않는 작가입니다.", HttpStatus.NOT_FOUND),
     NOT_CREATOR_OF_WEBTOON("웹툰 업로드 권한이 없습니다.", HttpStatus.FORBIDDEN),
     NOT_CREATOR_OF_WEBNOVEL("웹소설 업로드 권한이 없습니다.",  HttpStatus.FORBIDDEN),
     CREATOR_UNAUTHORIZED_ACCESS("해당 콘텐츠의 작성자가 아닙니다.", HttpStatus.FORBIDDEN),
-
+    INVALID_PUBLISHED_AT("연재 시작일이 유효하지 않습니다.", HttpStatus.BAD_REQUEST),
     // 토큰
     TOKEN_GENERATION_FAILED("Refresh Token 또는 Access Token 생성에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
     REFRESH_TOKEN_NOT_FOUND("Refresh Token이 존재하지 않습니다.", HttpStatus.UNAUTHORIZED),

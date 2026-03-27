@@ -16,8 +16,8 @@ public class CommonService {
     private final CreatorRepository creatorRepository;
 
     public Creator findCreatorByUser(User user) {
-        Creator creator = creatorRepository.findByUser(user).orElseThrow(
-                () -> new CustomException(ErrorCode.CREATER_NOT_FOUND)
+        Creator creator = creatorRepository.findByUser_Id(user.getId()).orElseThrow(
+                () -> new CustomException(ErrorCode.CREATOR_NOT_FOUND)
         );
 
         return creator;
