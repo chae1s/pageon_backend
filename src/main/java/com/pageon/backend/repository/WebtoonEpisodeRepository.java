@@ -35,4 +35,8 @@ public interface WebtoonEpisodeRepository extends JpaRepository<WebtoonEpisode, 
         LIMIT 1
     """)
     Long findNextEpisodeId(@Param("webtoonId") Long webtoonId, @Param("currentEpisodeNum") int currentEpisodeNum);
+
+    @Query("SELECT MAX(e.episodeNum) FROM WebtoonEpisode e " +
+            "WHERE e.webtoon.id = :contentId")
+    Optional<Integer> findMaxEpisodeNumByContentId(Long contentId);
 }

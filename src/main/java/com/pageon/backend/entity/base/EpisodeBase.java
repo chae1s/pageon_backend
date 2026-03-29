@@ -1,14 +1,14 @@
 package com.pageon.backend.entity.base;
 
 import com.pageon.backend.common.base.BaseTimeEntity;
+import com.pageon.backend.common.enums.EpisodeStatus;
 import com.pageon.backend.entity.Content;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.DynamicUpdate;
+
+import java.time.LocalDate;
 
 @Getter
 @SuperBuilder
@@ -37,6 +37,11 @@ public abstract class EpisodeBase extends BaseTimeEntity {
     @Builder.Default
     @Setter(AccessLevel.PROTECTED)
     private Long ratingCount = 0L;
+
+    private LocalDate publishedAt;
+
+    @Enumerated(EnumType.STRING)
+    private EpisodeStatus episodeStatus;
 
     public abstract Content getParentContent();
 

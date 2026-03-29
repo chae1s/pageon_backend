@@ -98,7 +98,10 @@ public enum ErrorCode {
     PAYMENT_API_FAILED("결제 API 호출에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
     PAYMENT_NOT_COMPLETED("완료된 결제만 취소할 수 있습니다.", HttpStatus.BAD_REQUEST),
     DELETION_REQUEST_NOT_FOUND("콘텐츠 삭제 요청이 존재하지 않습니다.", HttpStatus.NOT_FOUND),
-    INVALID_CANCEL_DELETE_REQUEST("콘텐츠 삭제 요청을 취소할 수 없습니다.", HttpStatus.BAD_REQUEST);
+    INVALID_CANCEL_DELETE_REQUEST("콘텐츠 삭제 요청을 취소할 수 없습니다.", HttpStatus.BAD_REQUEST),
+    INVALID_FILE_URL("유효한 파일 경로가 아닙니다.", HttpStatus.NOT_FOUND),
+    FILE_EMPTY("업로드된 파일이 없습니다.", HttpStatus.BAD_REQUEST),
+    ;
 
 
 

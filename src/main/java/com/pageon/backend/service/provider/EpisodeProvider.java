@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 public interface EpisodeProvider {
@@ -36,4 +37,6 @@ public interface EpisodeProvider {
     void saveLike(User user, Long commentId);
     void deleteLike(Long userId, Long commentId);
     EpisodePurchaseService.EpisodeInfo getEpisodeInfo(Long episodeId, PurchaseType purchaseType);
+
+    Optional<Integer> getMaxEpisodeNum(Long contentId);
 }

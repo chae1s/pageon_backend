@@ -1,3 +1,4 @@
+/*
 package com.pageon.backend.config;
 
 import com.opencsv.CSVReader;
@@ -221,3 +222,4 @@ public class InitUserData implements ApplicationRunner {
         return users;
     }
 }
+*/

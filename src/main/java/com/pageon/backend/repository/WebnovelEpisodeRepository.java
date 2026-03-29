@@ -35,4 +35,8 @@ public interface WebnovelEpisodeRepository extends JpaRepository<WebnovelEpisode
         LIMIT 1
     """)
     Long findNextEpisodeId(@Param("webnovelId") Long webnovelId, @Param("currentEpisodeNum") int currentEpisodeNum);
+
+    @Query("SELECT MAX(e.episodeNum) FROM WebnovelEpisode e " +
+            "WHERE e.webnovel.id = :contentId")
+    Optional<Integer> findMaxEpisodeNumByContentId(Long contentId);
 }

@@ -64,4 +64,6 @@ public interface WebnovelRepository extends JpaRepository<Webnovel, Long> {
             "JOIN FETCH w.creator " +
             "WHERE w.status = 'COMPLETED' AND w.totalAverageRating >= 8 AND w.deletedAt IS NULL")
     Page<Webnovel> findTopRatedCompleted(Pageable pageable);
+
+    Optional<Webnovel> findByIdAndCreator_IdAndDeletedAtIsNull(Long contentId, Long creatorId);
 }

@@ -29,4 +29,6 @@ public interface ContentProvider {
     Page<Interest> findByInterest(Long userId, Pageable pageable);
     Page<ReadingHistory> findByReadingHistory(Long userId, Pageable pageable);
 
+
+
 }

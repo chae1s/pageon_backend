@@ -4,7 +4,7 @@ import com.pageon.backend.common.enums.ContentType;
 import com.pageon.backend.common.enums.PurchaseType;
 import com.pageon.backend.dto.request.EpisodeCommentRequest;
 import com.pageon.backend.dto.request.EpisodeRatingRequest;
-import com.pageon.backend.dto.request.ContentInfoRequest;
+import com.pageon.backend.dto.request.content.ContentInfo;
 import com.pageon.backend.entity.Content;
 import com.pageon.backend.entity.WebnovelEpisode;
 import com.pageon.backend.entity.WebtoonEpisode;
@@ -42,7 +42,7 @@ public class UserBehaviorSimulator {
 
         Long userId = random.nextLong(10000) + 1;
 
-        ContentInfoRequest contentInfo = getRandomContent();
+        ContentInfo contentInfo = getRandomContent();
 
         /*
             Action 랜덤 결정
@@ -82,7 +82,7 @@ public class UserBehaviorSimulator {
 
     }
 
-    private ContentInfoRequest getRandomContent() {
+    private ContentInfo getRandomContent() {
 
         Long contentId = random.nextLong(700) + 1;
 
@@ -104,14 +104,14 @@ public class UserBehaviorSimulator {
             episodeId = episodes.get(randomIndex).getId();
         }
 
-        return ContentInfoRequest.builder()
+        return ContentInfo.builder()
                 .contentId(contentId)
                 .contentType(ContentType.valueOf(content.getDtype()))
                 .episodeId(episodeId)
                 .build();
     }
 
-    private void actionContentsView(Long userId, ContentInfoRequest contentInfo) {
+    private void actionContentsView(Long userId, ContentInfo contentInfo) {
         // 구매 내역 확인
         boolean purchaseCheck = episodePurchaseService.checkPurchaseHistory(userId, contentInfo.getContentId(), contentInfo.getEpisodeId());
 
@@ -155,7 +155,7 @@ public class UserBehaviorSimulator {
         return messages[random.nextInt(messages.length)];
     }
 
-    private void actionEpisodeComments(Long userId, ContentInfoRequest contentInfo) {
+    private void actionEpisodeComments(Long userId, ContentInfo contentInfo) {
         // 구매 내역 확인
         // 구매 내역 없으면 구매 또는 대여
         // 에피소드 페이지로 이동
@@ -173,7 +173,7 @@ public class UserBehaviorSimulator {
         }
     }
 
-    private void actionEpisodeRating(Long userId, ContentInfoRequest contentInfo) {
+    private void actionEpisodeRating(Long userId, ContentInfo contentInfo) {
         // 구매 내역 확인
         // 구매 내역 없으면 구매 또는 대여
         // 에피소드 페이지로 이동
@@ -189,12 +189,12 @@ public class UserBehaviorSimulator {
         }
     }
 
-    private void actionContentsInterest(Long userId, ContentInfoRequest contentInfo) {
+    private void actionContentsInterest(Long userId, ContentInfo contentInfo) {
         // 콘텐츠 관심 등록
         contentService.toggleInterest(userId, contentInfo.getContentId());
     }
 
-    private void actionContentsRental(Long userId, ContentInfoRequest contentInfo) {
+    private void actionContentsRental(Long userId, ContentInfo contentInfo) {
         // 구매 내역 확인
         boolean purchaseCheck = episodePurchaseService.checkPurchaseHistory(userId, contentInfo.getContentId(), contentInfo.getEpisodeId());
         // 구매 내역 없으면 에피소드 대여
@@ -206,7 +206,7 @@ public class UserBehaviorSimulator {
         episodeService.getEpisodeDetail(userId, contentType, contentInfo.getEpisodeId());
     }
 
-    private void actionContentsPurchase(Long userId, ContentInfoRequest contentInfo) {
+    private void actionContentsPurchase(Long userId, ContentInfo contentInfo) {
         // 구매 내역 확인
         boolean purchaseCheck = episodePurchaseService.checkPurchaseHistory(userId, contentInfo.getContentId(), contentInfo.getEpisodeId());
         boolean actionCheck = random.nextBoolean();

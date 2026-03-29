@@ -4,20 +4,27 @@ import com.pageon.backend.common.enums.DeleteStatus;
 import com.pageon.backend.common.enums.SerialDay;
 import com.pageon.backend.common.enums.SeriesStatus;
 import com.pageon.backend.common.utils.PageableUtil;
-import com.pageon.backend.dto.request.ContentRequest;
-import com.pageon.backend.dto.response.CreatorContentResponse;
+import com.pageon.backend.dto.request.content.ContentCreate;
+import com.pageon.backend.dto.request.content.ContentDelete;
+import com.pageon.backend.dto.request.content.ContentUpdate;
+import com.pageon.backend.dto.response.creator.content.ContentDetail;
+import com.pageon.backend.dto.response.creator.content.ContentList;
+import com.pageon.backend.dto.response.creator.content.ContentSimple;
+import com.pageon.backend.dto.response.creator.deletion.DeletionList;
 import com.pageon.backend.entity.*;
 import com.pageon.backend.exception.CustomException;
 import com.pageon.backend.exception.ErrorCode;
 import com.pageon.backend.repository.ContentDeletionRequestRepository;
 import com.pageon.backend.repository.ContentRepository;
 import com.pageon.backend.repository.CreatorRepository;
+import com.pageon.backend.service.provider.EpisodeProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -34,13 +41,16 @@ public class CreatorContentService {
     private final FileUploadService fileUploadService;
     private final ContentRepository contentRepository;
     private final ContentDeletionRequestRepository contentDeletionRequestRepository;
+    private final List<EpisodeProvider> providers;
 
     @Transactional
-    public void createContent(Long userId, ContentRequest.Create request) {
-        Creator creator = creatorRepository.findByUser_Id(userId).orElseThrow(
-                () -> new CustomException(ErrorCode.CREATOR_NOT_FOUND)
-        );
-        log.info("publishedAt: {}", request.getWorkStatus());
+    public void createContent(Long userId, ContentCreate request, MultipartFile coverImage) {
+        if (coverImage == null) {
+            throw new CustomException(ErrorCode.FILE_EMPTY);
+        }
+
+        Creator creator = getCreator(userId);
+
         if (request.getPublishedAt().isBefore(LocalDate.now())) {
             throw new CustomException(ErrorCode.INVALID_PUBLISHED_AT);
         }
@@ -54,17 +64,17 @@ public class CreatorContentService {
             throw new CustomException(ErrorCode.INVALID_CONTENT_TYPE);
         }
 
-        keywordService.registerContentKeyword(content, request.getKeywords());
-
         contentRepository.save(content);
 
-        String s3Url = fileUploadService.upload(request.getCoverImage(), String.format("%s/%d", request.getContentType(), content.getId()));
+        keywordService.registerContentKeyword(content, request.getKeywords());
+
+        String s3Url = fileUploadService.upload(coverImage, String.format("%s/%d", request.getContentType(), content.getId()));
 
         content.updateCover(s3Url);
 
     }
 
-    private Webnovel createWebnovel(Creator creator, ContentRequest.Create request) {
+    private Webnovel createWebnovel(Creator creator, ContentCreate request) {
 
         return Webnovel.builder()
                 .title(request.getTitle())
@@ -77,7 +87,7 @@ public class CreatorContentService {
 
     }
 
-    private Webtoon createWebtoon(Creator creator, ContentRequest.Create request) {
+    private Webtoon createWebtoon(Creator creator, ContentCreate request) {
 
         return Webtoon.builder()
                 .title(request.getTitle())
@@ -98,44 +108,42 @@ public class CreatorContentService {
         return SerialDay.values()[targetIndex];
     }
 
-    public Page<CreatorContentResponse.ContentList> getMyContents(Long userId, Pageable pageable, String seriesStatus, String sort) {
-        Creator creator = creatorRepository.findByUser_Id(userId).orElseThrow(
-                () -> new CustomException(ErrorCode.CREATOR_NOT_FOUND)
-        );
+    public Page<ContentList> getMyContents(Long userId, Pageable pageable, String seriesStatus, String sort) {
+        Creator creator = getCreator(userId);
 
         Pageable creatorContentPageable = PageableUtil.creatorContentPageable(pageable, sort);
         Page<Content> contents = contentRepository.findByCreator_IdAndStatusAndDeletedAtIsNull(creator.getId(), SeriesStatus.valueOf(seriesStatus), creatorContentPageable);
 
-        return contents.map(CreatorContentResponse.ContentList::fromEntity);
+        return contents.map(ContentList::fromEntity);
 
     }
 
-    public Page<CreatorContentResponse.Simple> getSimpleContents(Long userId, Pageable pageable, String query) {
-        Creator creator = creatorRepository.findByUser_Id(userId).orElseThrow(
-                () -> new CustomException(ErrorCode.CREATOR_NOT_FOUND)
+
+    public ContentSimple getContentById(Long userId, Long contentId) {
+        Creator creator = getCreator(userId);
+
+        ContentSimple content = contentRepository.findSimpleDtoByContentIdAndCreatorId(contentId, creator.getId()).orElseThrow(
+                () -> new CustomException(ErrorCode.CONTENT_NOT_FOUND)
         );
 
-        Pageable simpleContentPageable = PageableUtil.moreContentPageable(pageable, "publishedAt");
-        Page<Content> contents;
-        if (query == null || query.isEmpty()) {
-            contents = contentRepository.findByCreator_IdAndDeletedAtIsNull(creator.getId(), simpleContentPageable);
-        } else {
-            contents = contentRepository.searchByTitle(creator.getId(), query, simpleContentPageable);
-        }
+        String contentType = (content.getContentType().equals("WEBNOVEL")) ? "webnovels" : "webtoons";
 
-        return contents.map(CreatorContentResponse.Simple::fromEntity);
+        EpisodeProvider episodeProvider = getProvider(contentType);
+        int nextEpisodeNum = episodeProvider.getMaxEpisodeNum(contentId).orElse(0) + 1;
+
+        content.setNextEpisodeNum(nextEpisodeNum);
+
+        return content;
     }
 
-    public CreatorContentResponse.Detail getContent(Long userId, Long contentId) {
-        Creator creator = creatorRepository.findByUser_Id(userId).orElseThrow(
-                () -> new CustomException(ErrorCode.CREATOR_NOT_FOUND)
-        );
+    public ContentDetail getContent(Long userId, Long contentId) {
+        Creator creator = getCreator(userId);
 
         Content content = contentRepository.findByIdAndCreator_IdAndDeletedAtIsNull(contentId, creator.getId()).orElseThrow(
                 () -> new CustomException(ErrorCode.CONTENT_NOT_FOUND)
         );
 
-        return CreatorContentResponse.Detail.fromEntity(content, joinKeyword(content.getContentKeywords()));
+        return ContentDetail.fromEntity(content, joinKeyword(content.getContentKeywords()));
     }
 
     private String joinKeyword(List<ContentKeyword> contentKeywords) {
@@ -149,10 +157,8 @@ public class CreatorContentService {
 
 
     @Transactional
-    public void updateContent(Long userId, Long contentId, ContentRequest.Update request) {
-        Creator creator = creatorRepository.findByUser_Id(userId).orElseThrow(
-                () -> new CustomException(ErrorCode.CREATOR_NOT_FOUND)
-        );
+    public void updateContent(Long userId, Long contentId, ContentUpdate request, MultipartFile coverImage) {
+        Creator creator = getCreator(userId);
 
         Content content = contentRepository.findByIdAndCreator_IdAndDeletedAtIsNull(contentId, creator.getId()).orElseThrow(
                 () -> new CustomException(ErrorCode.CONTENT_NOT_FOUND)
@@ -161,33 +167,20 @@ public class CreatorContentService {
         content.updateContent(request);
         keywordService.updateContentKeyword(content, request.getKeywords());
 
-        if (request.getCoverImage() != null) {
+        if (coverImage != null) {
             fileUploadService.deleteFile(content.getCover());
 
             String contentType = (content.getDtype().equals("WEBNOVEL")) ? "webnovels" : "webtoons";
-            String newS3Url = fileUploadService.upload(request.getCoverImage(), String.format("%s/%d", contentType, content.getId()));
+            String newS3Url = fileUploadService.upload(coverImage, String.format("%s/%d", contentType, content.getId()));
             content.updateCover(newS3Url);
         }
 
     }
 
-    public CreatorContentResponse.DeleteContent getDeleteContent(Long userId, Long contentId) {
-        Creator creator = creatorRepository.findByUser_Id(userId).orElseThrow(
-                () -> new CustomException(ErrorCode.CREATOR_NOT_FOUND)
-        );
-
-        Content content = contentRepository.findByIdAndCreator_IdAndDeletedAtIsNull(contentId, creator.getId()).orElseThrow(
-                () -> new CustomException(ErrorCode.CONTENT_NOT_FOUND)
-        );
-
-        return CreatorContentResponse.DeleteContent.fromEntity(content);
-    }
 
     @Transactional
-    public void requestContentDeletion(Long userId, Long contentId, ContentRequest.Delete request) {
-        Creator creator = creatorRepository.findByUser_Id(userId).orElseThrow(
-                () -> new CustomException(ErrorCode.CREATOR_NOT_FOUND)
-        );
+    public void requestContentDeletion(Long userId, Long contentId, ContentDelete request) {
+        Creator creator = getCreator(userId);
 
         Content content = contentRepository.findByIdAndCreator_IdAndDeletedAtIsNull(contentId, creator.getId()).orElseThrow(
                 () -> new CustomException(ErrorCode.CONTENT_NOT_FOUND)
@@ -207,21 +200,17 @@ public class CreatorContentService {
         contentDeletionRequestRepository.save(deletionRequest);
     }
 
-    public Page<CreatorContentResponse.DeletionList> getMyDeletionRequests(Long userId, Pageable pageable) {
-        Creator creator = creatorRepository.findByUser_Id(userId).orElseThrow(
-                () -> new CustomException(ErrorCode.CREATOR_NOT_FOUND)
-        );
+    public Page<DeletionList> getMyDeletionRequests(Long userId, Pageable pageable) {
+        Creator creator = getCreator(userId);
 
         Page<ContentDeletionRequest> deletionRequests = contentDeletionRequestRepository.findByCreatorId(creator.getId(), pageable);
 
-        return deletionRequests.map(CreatorContentResponse.DeletionList::fromEntity);
+        return deletionRequests.map(DeletionList::fromEntity);
     }
 
     @Transactional
     public void cancelDeletionRequest(Long userId, Long deleteId) {
-        Creator creator = creatorRepository.findByUser_Id(userId).orElseThrow(
-                () -> new CustomException(ErrorCode.CREATOR_NOT_FOUND)
-        );
+        Creator creator = getCreator(userId);
 
         ContentDeletionRequest deletionRequest = contentDeletionRequestRepository.findByIdAndCreator_Id(deleteId, creator.getId()).orElseThrow(
                 () -> new CustomException(ErrorCode.DELETION_REQUEST_NOT_FOUND)
@@ -235,5 +224,18 @@ public class CreatorContentService {
 
         deletionRequest.cancelDeletion();
 
+    }
+
+    private Creator getCreator(Long userId) {
+        return creatorRepository.findByUser_Id(userId).orElseThrow(
+                () -> new CustomException(ErrorCode.CREATOR_NOT_FOUND)
+        );
+    }
+
+    private EpisodeProvider getProvider(String contentType) {
+        return providers.stream()
+                .filter(p -> p.supports(contentType))
+                .findFirst()
+                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_CONTENT_TYPE));
     }
 }

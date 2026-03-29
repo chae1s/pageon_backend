@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Component
@@ -229,5 +230,10 @@ public class WebtoonEpisodeProvider implements EpisodeProvider {
                 price,
                 episode
         );
+    }
+
+    @Override
+    public Optional<Integer> getMaxEpisodeNum(Long contentId) {
+        return webtoonEpisodeRepository.findMaxEpisodeNumByContentId(contentId);
     }
 }

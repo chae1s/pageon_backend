@@ -1,6 +1,7 @@
 package com.pageon.backend.repository;
 
 import com.pageon.backend.common.enums.SeriesStatus;
+import com.pageon.backend.dto.response.creator.content.ContentSimple;
 import com.pageon.backend.entity.Content;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -9,6 +10,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface ContentRepository extends JpaRepository<Content, Long> {
@@ -42,12 +44,22 @@ public interface ContentRepository extends JpaRepository<Content, Long> {
     @EntityGraph(attributePaths = {"creator", "contentKeywords.keyword"})
     Page<Content> findByCreator_IdAndStatusAndDeletedAtIsNull(Long creatorId, SeriesStatus status, Pageable pageable);
 
-    Page<Content> findByCreator_IdAndDeletedAtIsNull(Long creatorId, Pageable pageable);
+    @Query(value = "SELECT DISTINCT c FROM Content c " +
+            "WHERE c.creator.id = :creatorId AND c.deletedAt IS NULL AND c.workStatus = 'PUBLISHED'")
+    Page<Content> findByPublishedContentByCreatorId(Long creatorId, Pageable pageable);
 
     @Query(value = "SELECT DISTINCT c FROM Content c " +
-            "WHERE c.creator.id = :creatorId AND c.title LIKE %:query%")
+            "WHERE c.creator.id = :creatorId AND c.title LIKE %:query% AND c.deletedAt IS NULL AND c.workStatus = 'PUBLISHED'")
     Page<Content> searchByTitle(Long creatorId, String query, Pageable pageable);
 
     @EntityGraph(attributePaths = {"contentKeywords.keyword"})
     Optional<Content> findByIdAndCreator_IdAndDeletedAtIsNull(Long contentId, Long userId);
+
+    List<Content> creatorId(Long creatorId);
+
+    @Query("SELECT new com.pageon.backend.dto.response.creator.content.ContentSimple(" +
+            "c.id, c.title, c.dtype, c.serialDay, null ) " +
+            "FROM Content c " +
+            "WHERE c.id = :contentId AND c.creator.id = :creatorId")
+    Optional<ContentSimple> findSimpleDtoByContentIdAndCreatorId(Long contentId, Long creatorId);
 }

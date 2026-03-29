@@ -4,12 +4,10 @@ import com.pageon.backend.common.base.BaseTimeEntity;
 import com.pageon.backend.common.enums.SerialDay;
 import com.pageon.backend.common.enums.SeriesStatus;
 import com.pageon.backend.common.enums.WorkStatus;
-import com.pageon.backend.dto.request.ContentRequest;
-import com.pageon.backend.dto.request.ContentUpdateRequest;
+import com.pageon.backend.dto.request.content.ContentUpdate;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.springframework.cglib.core.Local;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -77,10 +75,11 @@ public abstract class Content extends BaseTimeEntity {
         this.cover = s3Url;
     }
 
-    public void updateContent(ContentRequest.Update request) {
+    public void updateContent(ContentUpdate request) {
         this.title = request.getTitle();
         this.description = request.getDescription();
         this.serialDay = request.getSerialDay();
+        this.status = request.getSeriesStatus();
     }
 
 
