@@ -18,13 +18,14 @@ public class EpisodeActionHandler {
     private final ActionLogService actionLogService;
 
     @Transactional
-    public void handleViewEffects(Long userId, Content content, Long episodeId, ContentType contentType) {
+    public void handleViewEffects(Long userId, Content content, EpisodeBase episode, ContentType contentType) {
 
-        readingHistoryService.checkReadingHistory(userId, content.getId(), episodeId);
+        readingHistoryService.checkReadingHistory(userId, content.getId(), episode.getId());
 
         actionLogService.createActionLog(userId, content.getId(), contentType, ActionType.VIEW, 0);
 
         content.updateViewCount();
+        episode.updateViewCount();
     }
 
     @Transactional

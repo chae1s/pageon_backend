@@ -6,6 +6,7 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.DynamicUpdate;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,4 +40,14 @@ public class WebnovelEpisode extends EpisodeBase {
     public Content getParentContent() {
         return this.webnovel;
     }
+
+    @Override
+    public void updateEpisode(String episodeTitle, LocalDate publishedAt) {
+        super.updateEpisode(episodeTitle, publishedAt);
+    }
+
+    public void updateContent(String content) {
+        this.content = content;
+    }
+
 }

@@ -1,5 +1,6 @@
 package com.pageon.backend.repository;
 
+import com.pageon.backend.common.enums.DeleteStatus;
 import com.pageon.backend.entity.ContentDeletionRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -14,4 +15,6 @@ public interface ContentDeletionRequestRepository extends JpaRepository<ContentD
 
     @EntityGraph(attributePaths = {"content"})
     Optional<ContentDeletionRequest> findByIdAndCreator_Id(Long deleteId, Long creatorId);
+
+    int countByCreator_IdAndDeleteStatus(Long id, DeleteStatus deleteStatus);
 }

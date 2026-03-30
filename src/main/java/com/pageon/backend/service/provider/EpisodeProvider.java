@@ -1,8 +1,11 @@
 package com.pageon.backend.service.provider;
 
+import com.pageon.backend.common.enums.EpisodeStatus;
 import com.pageon.backend.common.enums.PurchaseType;
 import com.pageon.backend.dto.response.CommentResponse;
+import com.pageon.backend.dto.response.creator.episode.EpisodeList;
 import com.pageon.backend.entity.User;
+import com.pageon.backend.entity.base.EpisodeBase;
 import com.pageon.backend.entity.base.EpisodeCommentBase;
 import com.pageon.backend.service.EpisodePurchaseService;
 import org.springframework.data.domain.Page;
@@ -39,4 +42,10 @@ public interface EpisodeProvider {
     EpisodePurchaseService.EpisodeInfo getEpisodeInfo(Long episodeId, PurchaseType purchaseType);
 
     Optional<Integer> getMaxEpisodeNum(Long contentId);
+
+    List<Object[]> getGroupByStats(Long contentId);
+
+    Page<EpisodeList> getAllEpisodesByContent(Long contentId, Pageable pageable);
+
+    Page<EpisodeList> getEpisodesByEpisodeStatus(Long contentId, EpisodeStatus episodeStatus, Pageable pageable);
 }

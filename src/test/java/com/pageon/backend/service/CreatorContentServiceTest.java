@@ -4,8 +4,7 @@ import com.pageon.backend.common.enums.*;
 import com.pageon.backend.dto.request.content.ContentCreate;
 import com.pageon.backend.dto.request.content.ContentDelete;
 import com.pageon.backend.dto.request.content.ContentUpdate;
-import com.pageon.backend.dto.response.creator.content.ContentDetail;
-import com.pageon.backend.dto.response.creator.content.ContentList;
+import com.pageon.backend.dto.response.creator.content.*;
 import com.pageon.backend.dto.response.creator.deletion.DeletionList;
 import com.pageon.backend.entity.*;
 import com.pageon.backend.exception.CustomException;
@@ -13,6 +12,8 @@ import com.pageon.backend.exception.ErrorCode;
 import com.pageon.backend.repository.ContentDeletionRequestRepository;
 import com.pageon.backend.repository.ContentRepository;
 import com.pageon.backend.repository.CreatorRepository;
+import com.pageon.backend.service.provider.EpisodeProvider;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -40,6 +41,7 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+@Slf4j
 @ActiveProfiles("test")
 @DisplayName("CreatorContentService 단위 테스트")
 @ExtendWith(MockitoExtension.class)
@@ -56,10 +58,16 @@ class CreatorContentServiceTest {
     private KeywordService keywordService;
     @Mock
     private ContentDeletionRequestRepository contentDeletionRequestRepository;
+    @Mock
+    private List<EpisodeProvider> providers;
+    @Mock
+    private EpisodeProvider episodeProvider;
 
     @BeforeEach
     void setUp() {
         lenient().when(fileUploadService.upload(any(), any())).thenReturn("https://s3.url/cover.jpg");
+        lenient().when(providers.stream()).thenReturn(Stream.of(episodeProvider));
+        lenient().when(episodeProvider.supports(anyString())).thenReturn(true);
     }
 
     private Content mockContent() {
@@ -71,6 +79,13 @@ class CreatorContentServiceTest {
         lenient().when(content.getSerialDay()).thenReturn(SerialDay.MONDAY);
         lenient().when(content.getContentKeywords()).thenReturn(List.of());
         lenient().when(content.getDtype()).thenReturn("WEBNOVEL");
+        lenient().when(content.getStatus()).thenReturn(SeriesStatus.ONGOING);
+        lenient().when(content.getContentKeywords()).thenReturn(List.of());
+        lenient().when(content.getViewCount()).thenReturn(100L);
+        lenient().when(content.getInterestCount()).thenReturn(100L);
+        lenient().when(content.getWorkStatus()).thenReturn(WorkStatus.PENDING);
+        lenient().when(content.getEpisodeUpdatedAt()).thenReturn(LocalDateTime.now());
+        lenient().when(content.getEpisodeCount()).thenReturn(20);
         return content;
     }
 
@@ -641,5 +656,146 @@ class CreatorContentServiceTest {
         assertEquals(ErrorCode.DELETION_REQUEST_NOT_FOUND, ErrorCode.valueOf(exception.getErrorCode()));
         assertEquals("콘텐츠 삭제 요청이 존재하지 않습니다.", exception.getErrorMessage());
     }
+
+    @Test
+    @DisplayName("콘텐츠 통계 조회 성공")
+    void getContentStats_withValidUserId_shouldReturnStats() {
+        // given
+        Creator creator = Creator.builder().id(1L).build();
+
+        List<Object[]> statusRows = List.of(
+                new Object[]{SeriesStatus.ONGOING, 3L},
+                new Object[]{SeriesStatus.REST, 2L},
+                new Object[]{SeriesStatus.COMPLETED, 1L}
+        );
+
+        ContentPerformanceStats stats = new ContentPerformanceStats(100L, 9.5, 109L);
+        List<ContentTab> contentTabs = List.of(mock(ContentTab.class), mock(ContentTab.class));
+
+        when(creatorRepository.findByUser_Id(1L)).thenReturn(Optional.of(creator));
+        when(contentRepository.countGroupByStatus(eq(1L))).thenReturn(statusRows);
+        when(contentDeletionRequestRepository.countByCreator_IdAndDeleteStatus(eq(1L), eq(DeleteStatus.PENDING))).thenReturn(1);
+        when(contentRepository.findTotalStatsByCreatorId(eq(1L))).thenReturn(stats);
+        when(contentRepository.findAllByStatusOngoing(eq(1L))).thenReturn(contentTabs);
+
+        // when
+        ContentStats result = creatorContentService.getContentStats(1L);
+
+        // then
+        assertNotNull(result);
+        verify(contentRepository).countGroupByStatus(eq(1L));
+        verify(contentDeletionRequestRepository)
+                .countByCreator_IdAndDeleteStatus(eq(1L), eq(DeleteStatus.PENDING));
+        verify(contentRepository).findTotalStatsByCreatorId(eq(1L));
+        verify(contentRepository).findAllByStatusOngoing(eq(1L));
+        assertEquals(3L, result.getOngoingCount());
+        assertEquals(2L, result.getRestCount());
+        assertEquals(1L, result.getCompletedCount());
+    }
+
+    @Test
+    @DisplayName("콘텐츠가 없으면 빈 statusMap 반환")
+    void getContentStats_withNoContents_shouldReturnEmptyStatusMap() {
+        // given
+        Creator creator = Creator.builder().id(1L).build();
+
+        when(creatorRepository.findByUser_Id(1L)).thenReturn(Optional.of(creator));
+        when(contentRepository.countGroupByStatus(1L)).thenReturn(List.of()); // 비어있음
+        when(contentDeletionRequestRepository.countByCreator_IdAndDeleteStatus(any(), any()))
+                .thenReturn(0);
+        when(contentRepository.findTotalStatsByCreatorId(1L))
+                .thenReturn(mock(ContentPerformanceStats.class));
+        when(contentRepository.findAllByStatusOngoing(1L)).thenReturn(List.of());
+
+        // when
+        ContentStats result = creatorContentService.getContentStats(1L);
+
+        // then
+        assertNotNull(result);
+        assertEquals(0, result.getOngoingCount());
+    }
+
+    @Test
+    @DisplayName("크리에이터가 없으면 CustomException 발생")
+    void getContentStats_whenCreatorNotFound_shouldThrowException() {
+        // given
+        when(creatorRepository.findByUser_Id(1L)).thenReturn(Optional.empty());
+
+        // when
+        CustomException exception = assertThrows(CustomException.class,
+                () -> creatorContentService.getContentStats(1L));
+
+        // then
+        assertEquals(ErrorCode.CREATOR_NOT_FOUND, ErrorCode.valueOf(exception.getErrorCode()));
+        assertEquals("존재하지 않는 작가입니다.", exception.getErrorMessage());
+        verify(contentRepository, never()).countGroupByStatus(any());
+        verify(contentRepository, never()).findTotalStatsByCreatorId(any());
+    }
+
+    @Test
+    @DisplayName("콘텐츠 대시보드 조회 성공")
+    void getContentDashboard_withValidUserId_shouldReturnContentDashboard() {
+        // given
+        Creator creator = Creator.builder().id(1L).build();
+        Content content = mockContent();
+
+        List<Object[]> statusRows = List.of(
+                new Object[]{EpisodeStatus.SCHEDULED, 10L},
+                new Object[]{EpisodeStatus.PUBLISHED, 20L},
+                new Object[]{EpisodeStatus.DRAFT, 30L}
+        );
+
+        when(creatorRepository.findByUser_Id(1L)).thenReturn(Optional.of(creator));
+        when(contentRepository.findByIdAndCreator_IdAndDeletedAtIsNull(eq(1L), eq(1L))).thenReturn(Optional.of(content));
+        when(episodeProvider.getGroupByStats(eq(1L))).thenReturn(statusRows);
+
+        //when
+        ContentDashboard result = creatorContentService.getContentDashboard(1L, 1L);
+
+        // then
+        assertNotNull(result);
+        assertEquals(20, result.getEpisodeStats().getPublishedEpisodeCount());
+        assertEquals(30, result.getEpisodeStats().getDraftEpisodeCount());
+        assertEquals("cover.jpg", result.getCover());
+
+
+    }
+
+    @Test
+    @DisplayName("크리에이터가 없으면 CustomException 발생")
+    void getContentDashboard_whenCreatorNotFound_shouldThrowException() {
+        // given
+        when(creatorRepository.findByUser_Id(1L)).thenReturn(Optional.empty());
+
+        // when
+        CustomException exception = assertThrows(CustomException.class,
+                () -> creatorContentService.getContentDashboard(1L, 1L));
+
+        // then
+        assertEquals(ErrorCode.CREATOR_NOT_FOUND, ErrorCode.valueOf(exception.getErrorCode()));
+        assertEquals("존재하지 않는 작가입니다.", exception.getErrorMessage());
+        verify(episodeProvider, never()).getGroupByStats(any());
+    }
+
+    @Test
+    @DisplayName("콘텐츠가 없으면 CustomException 발생")
+    void getContentDashboard_whenContentNotFound_shouldThrowCustomException() {
+        // given
+        Creator creator = Creator.builder().id(1L).build();
+
+        when(creatorRepository.findByUser_Id(1L)).thenReturn(Optional.of(creator));
+        when(contentRepository.findByIdAndCreator_IdAndDeletedAtIsNull(eq(1L), eq(1L))).thenReturn(Optional.empty());
+
+        // when
+        CustomException exception = assertThrows(CustomException.class,
+                () -> creatorContentService.getContentDashboard(1L, 1L)
+        );
+
+        // then
+        assertEquals(ErrorCode.CONTENT_NOT_FOUND, ErrorCode.valueOf(exception.getErrorCode()));
+        assertEquals("존재하지 않는 콘텐츠입니다.", exception.getErrorMessage());
+        verify(episodeProvider, never()).getGroupByStats(any());
+    }
+
 
 }

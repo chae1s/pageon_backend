@@ -1,4 +1,4 @@
-package com.pageon.backend.controller;
+package com.pageon.backend.controller.episode;
 
 import com.pageon.backend.common.enums.PurchaseType;
 import com.pageon.backend.dto.request.EpisodeCommentRequest;

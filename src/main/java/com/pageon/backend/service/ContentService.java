@@ -233,15 +233,17 @@ public class ContentService {
         log.info("Toggling interest status for User ID: {} and Content ID: {}", userId, contentId);
         Optional<Interest> existingInterest = interestRepository.findByUser_IdAndContentId(userId, contentId);
 
+        Content content = contentRepository.findByIdAndDeletedAtIsNull(contentId).orElseThrow(
+                () -> new CustomException(ErrorCode.CONTENT_NOT_FOUND)
+        );
+
         if (existingInterest.isPresent()) {
             interestRepository.delete(existingInterest.get());
+            content.updateInterestCount(-1);
             log.info("Successfully REMOVED interest for User: {} on Content: {}", userId, contentId);
         } else {
             User user = userRepository.findByIdAndDeletedAtIsNull(userId).orElseThrow(
                     () -> new CustomException(ErrorCode.USER_NOT_FOUND)
-            );
-            Content content = contentRepository.findByIdAndDeletedAtIsNull(contentId).orElseThrow(
-                    () -> new CustomException(ErrorCode.CONTENT_NOT_FOUND)
             );
 
             Interest interest = Interest.builder()
@@ -250,6 +252,7 @@ public class ContentService {
                     .build();
 
             interestRepository.save(interest);
+            content.updateInterestCount(1);
             log.info("Successfully ADDED interest for User: {} on Content: {}", userId, contentId);
         }
     }

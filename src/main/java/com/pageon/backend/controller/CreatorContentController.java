@@ -4,9 +4,7 @@ import com.pageon.backend.dto.request.content.ContentCreate;
 import com.pageon.backend.dto.request.content.ContentDelete;
 import com.pageon.backend.dto.request.content.ContentUpdate;
 import com.pageon.backend.dto.response.PageResponse;
-import com.pageon.backend.dto.response.creator.content.ContentDetail;
-import com.pageon.backend.dto.response.creator.content.ContentList;
-import com.pageon.backend.dto.response.creator.content.ContentSimple;
+import com.pageon.backend.dto.response.creator.content.*;
 import com.pageon.backend.dto.response.creator.deletion.DeletionList;
 import com.pageon.backend.security.PrincipalUser;
 import com.pageon.backend.service.CreatorContentService;
@@ -28,15 +26,15 @@ public class CreatorContentController {
     private final CreatorContentService creatorContentService;
 
     @PostMapping
-    public ResponseEntity<Void> createContent(
+    public ResponseEntity<Long> createContent(
             @AuthenticationPrincipal PrincipalUser principalUser,
             @RequestPart("data") ContentCreate request,
             @RequestPart("coverImage")MultipartFile coverImage
     ) {
 
-        creatorContentService.createContent(principalUser.getId(), request, coverImage);
+        Long contentId = creatorContentService.createContent(principalUser.getId(), request, coverImage);
 
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(contentId);
     }
 
     @GetMapping
@@ -109,6 +107,24 @@ public class CreatorContentController {
         creatorContentService.cancelDeletionRequest(principalUser.getId(), deleteId);
 
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/dashboard")
+    public ResponseEntity<ContentStats> getContentStats(@AuthenticationPrincipal PrincipalUser principalUser) {
+
+        ContentStats contentStats = creatorContentService.getContentStats(principalUser.getId());
+
+        return ResponseEntity.ok(contentStats);
+    }
+
+    @GetMapping("/{contentId}/dashboard")
+    public ResponseEntity<ContentDashboard> getContentDashboard(
+            @AuthenticationPrincipal PrincipalUser principalUser,
+            @PathVariable Long contentId
+    ) {
+        ContentDashboard contentDashboard = creatorContentService.getContentDashboard(principalUser.getId(), contentId);
+
+        return ResponseEntity.ok(contentDashboard);
     }
 
 }

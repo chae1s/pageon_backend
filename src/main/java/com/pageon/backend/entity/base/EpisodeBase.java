@@ -9,6 +9,7 @@ import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.DynamicUpdate;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Getter
 @SuperBuilder
@@ -42,6 +43,14 @@ public abstract class EpisodeBase extends BaseTimeEntity {
 
     @Enumerated(EnumType.STRING)
     private EpisodeStatus episodeStatus;
+    private Long viewCount;
+
+    public void updateViewCount() {
+        if (this.viewCount == null) {
+            this.viewCount = 0L;
+        }
+        this.viewCount++;
+    }
 
     public abstract Content getParentContent();
 
@@ -55,6 +64,15 @@ public abstract class EpisodeBase extends BaseTimeEntity {
         if (this.ratingCount == 0) return;
 
         this.averageRating = this.averageRating + ((double) (newScore - oldScore) / this.ratingCount);
+    }
+
+    public void updateEpisode(String episodeTitle, LocalDate publishedAt) {
+        this.episodeTitle = episodeTitle;
+        this.publishedAt = publishedAt;
+    }
+
+    public void deleteEpisode() {
+        this.setDeletedAt(LocalDateTime.now());
     }
 
 }

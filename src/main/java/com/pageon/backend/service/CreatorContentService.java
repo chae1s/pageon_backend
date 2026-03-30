@@ -1,16 +1,16 @@
 package com.pageon.backend.service;
 
 import com.pageon.backend.common.enums.DeleteStatus;
+import com.pageon.backend.common.enums.EpisodeStatus;
 import com.pageon.backend.common.enums.SerialDay;
 import com.pageon.backend.common.enums.SeriesStatus;
 import com.pageon.backend.common.utils.PageableUtil;
 import com.pageon.backend.dto.request.content.ContentCreate;
 import com.pageon.backend.dto.request.content.ContentDelete;
 import com.pageon.backend.dto.request.content.ContentUpdate;
-import com.pageon.backend.dto.response.creator.content.ContentDetail;
-import com.pageon.backend.dto.response.creator.content.ContentList;
-import com.pageon.backend.dto.response.creator.content.ContentSimple;
+import com.pageon.backend.dto.response.creator.content.*;
 import com.pageon.backend.dto.response.creator.deletion.DeletionList;
+import com.pageon.backend.dto.response.creator.episode.EpisodeStats;
 import com.pageon.backend.entity.*;
 import com.pageon.backend.exception.CustomException;
 import com.pageon.backend.exception.ErrorCode;
@@ -30,6 +30,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -44,7 +46,7 @@ public class CreatorContentService {
     private final List<EpisodeProvider> providers;
 
     @Transactional
-    public void createContent(Long userId, ContentCreate request, MultipartFile coverImage) {
+    public Long createContent(Long userId, ContentCreate request, MultipartFile coverImage) {
         if (coverImage == null) {
             throw new CustomException(ErrorCode.FILE_EMPTY);
         }
@@ -55,7 +57,7 @@ public class CreatorContentService {
             throw new CustomException(ErrorCode.INVALID_PUBLISHED_AT);
         }
 
-        Content content = null;
+        Content content;
         if (request.getContentType().equals("webnovels")) {
             content = createWebnovel(creator, request);
         } else if (request.getContentType().equals("webtoons")) {
@@ -72,6 +74,7 @@ public class CreatorContentService {
 
         content.updateCover(s3Url);
 
+        return content.getId();
     }
 
     private Webnovel createWebnovel(Creator creator, ContentCreate request) {
@@ -224,6 +227,48 @@ public class CreatorContentService {
 
         deletionRequest.cancelDeletion();
 
+    }
+
+    public ContentStats getContentStats(Long userId) {
+        Creator creator = getCreator(userId);
+        Map<SeriesStatus, Long> statusMap = contentRepository.countGroupByStatus(creator.getId())
+                .stream()
+                .collect(Collectors.toMap(
+                        row -> (SeriesStatus) row[0],
+                        row -> (Long) row[1]
+                ));
+
+        int deletionCount = contentDeletionRequestRepository
+                .countByCreator_IdAndDeleteStatus(creator.getId(), DeleteStatus.PENDING);
+
+        ContentPerformanceStats stats = contentRepository.findTotalStatsByCreatorId(creator.getId());
+
+        List<ContentTab> contentTabs = contentRepository.findAllByStatusOngoing(creator.getId());
+
+        return ContentStats.of(statusMap, deletionCount, stats, contentTabs);
+
+    }
+
+    public ContentDashboard getContentDashboard(Long userId, Long contentId) {
+
+        Creator creator = getCreator(userId);
+        Content content = contentRepository.findByIdAndCreator_IdAndDeletedAtIsNull(contentId, creator.getId()).orElseThrow(
+                () -> new CustomException(ErrorCode.CONTENT_NOT_FOUND)
+        );
+
+        String contentType = (content.getDtype().equals("WEBNOVEL")) ? "webnovels" : "webtoons";
+        EpisodeProvider provider = getProvider(contentType);
+
+        Map<EpisodeStatus, Long> statusMap = provider.getGroupByStats(contentId)
+                .stream()
+                .collect(Collectors.toMap(
+                        row -> (EpisodeStatus) row[0],
+                        row -> (Long) row[1]
+                ));
+
+        EpisodeStats stats = new EpisodeStats(content.getEpisodeCount(), statusMap);
+
+        return ContentDashboard.of(content, stats);
     }
 
     private Creator getCreator(Long userId) {

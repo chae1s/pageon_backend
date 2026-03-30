@@ -1,6 +1,7 @@
 package com.pageon.backend.dto.response;
 
 import com.pageon.backend.common.enums.PurchaseType;
+import com.pageon.backend.dto.response.episode.EpisodeImage;
 import com.pageon.backend.entity.*;
 import com.pageon.backend.entity.base.EpisodeBase;
 import lombok.AllArgsConstructor;
@@ -109,14 +110,14 @@ public class EpisodeResponse {
         private Integer rentalPrice;
         private Double averageRating;
         private Long ratingCount;
-        private List<EpisodeResponse.EpisodeImage> images;
+        private List<EpisodeImage> images;
         private Long prevEpisodeId;
         private Long nextEpisodeId;
         private Integer userScore;
         private CommentResponse.Best bestComment;
 
         public static WebtoonDetail fromEntity(
-                WebtoonEpisode episode, String title, List<EpisodeResponse.EpisodeImage> images,
+                WebtoonEpisode episode, String title, List<EpisodeImage> images,
                 Long prevEpisodeId, Long nextEpisodeId, Integer userScore, CommentResponse.Best bestComment)
         {
             return WebtoonDetail.builder()
@@ -137,24 +138,6 @@ public class EpisodeResponse {
         }
     }
 
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class EpisodeImage {
-        private Long id;
-        private Integer sequence;
-        private String imageUrl;
-
-        public static EpisodeImage fromEntity(WebtoonImage webtoonImage, String signUrl) {
-
-            return EpisodeImage.builder()
-                    .id(webtoonImage.getId())
-                    .sequence(webtoonImage.getSequence())
-                    .imageUrl(signUrl)
-                    .build();
-        }
-    }
 
 
 }

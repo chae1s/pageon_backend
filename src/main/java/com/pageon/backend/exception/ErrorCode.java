@@ -101,7 +101,10 @@ public enum ErrorCode {
     INVALID_CANCEL_DELETE_REQUEST("콘텐츠 삭제 요청을 취소할 수 없습니다.", HttpStatus.BAD_REQUEST),
     INVALID_FILE_URL("유효한 파일 경로가 아닙니다.", HttpStatus.NOT_FOUND),
     FILE_EMPTY("업로드된 파일이 없습니다.", HttpStatus.BAD_REQUEST),
-    ;
+    NOT_CONTENT_OWNER("콘텐츠 작성자가 아닙니다.", HttpStatus.FORBIDDEN),
+    DUPLICATE_SEQUENCE("웹툰 에피소드 이미지 순서가 중복되었습니다.", HttpStatus.BAD_REQUEST),
+    INVALID_SEQUENCE("웹툰 에피소드 이미지 순서가 유효하지 않습니다.", HttpStatus.BAD_REQUEST),
+    IMAGE_NOT_FOUND("웹툰 에피소드 이미지를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),;
 
 
 

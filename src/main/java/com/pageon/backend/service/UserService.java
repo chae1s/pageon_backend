@@ -119,7 +119,7 @@ public class UserService {
 
         String targetPath = null;
         if (userRoles.contains("ROLE_CREATOR")) {
-            targetPath = "/creators/dashboard";
+            targetPath = "/creators/contents/dashboard";
         } else if (userRoles.contains("ROLE_ADMIN")) {
             targetPath = "/admin/dashboard";
         }

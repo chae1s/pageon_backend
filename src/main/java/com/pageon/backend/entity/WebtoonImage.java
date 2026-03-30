@@ -30,4 +30,8 @@ public class WebtoonImage {
     public void addEpisode(WebtoonEpisode episode) {
         this.webtoonEpisode = episode;
     }
+
+    public void updateSequence(Integer sequence) {
+        this.sequence = sequence;
+    }
 }

@@ -6,6 +6,7 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.DynamicUpdate;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -51,5 +52,10 @@ public class WebtoonEpisode extends EpisodeBase {
     @Override
     public Content getParentContent() {
         return this.webtoon;
+    }
+
+    @Override
+    public void updateEpisode(String episodeTitle, LocalDate publishedAt) {
+        super.updateEpisode(episodeTitle, publishedAt);
     }
 }

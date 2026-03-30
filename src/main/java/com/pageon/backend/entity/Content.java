@@ -70,6 +70,9 @@ public abstract class Content extends BaseTimeEntity {
     @Builder.Default
     private Integer episodeCount = 0;
 
+    @Builder.Default
+    private Long interestCount = 0L;
+
 
     public void updateCover(String s3Url) {
         this.cover = s3Url;
@@ -106,6 +109,10 @@ public abstract class Content extends BaseTimeEntity {
     public void updateEpisode() {
         this.episodeUpdatedAt = LocalDateTime.now();
         this.episodeCount++;
+    }
+
+    public void updateInterestCount(int num) {
+        this.interestCount = this.interestCount + num;
     }
 
     public void updateViewCount() {

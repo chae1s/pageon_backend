@@ -1,10 +1,14 @@
 package com.pageon.backend.service.provider;
 
 import com.pageon.backend.common.enums.ContentType;
+import com.pageon.backend.common.enums.EpisodeStatus;
 import com.pageon.backend.common.enums.PurchaseType;
 import com.pageon.backend.dto.response.CommentResponse;
 import com.pageon.backend.dto.response.EpisodeResponse;
+import com.pageon.backend.dto.response.creator.episode.EpisodeList;
+import com.pageon.backend.dto.response.episode.EpisodeImage;
 import com.pageon.backend.entity.*;
+import com.pageon.backend.entity.base.EpisodeBase;
 import com.pageon.backend.entity.base.EpisodeCommentBase;
 import com.pageon.backend.exception.CustomException;
 import com.pageon.backend.exception.ErrorCode;
@@ -48,9 +52,9 @@ public class WebtoonEpisodeProvider implements EpisodeProvider {
                 () -> new CustomException(ErrorCode.EPISODE_NOT_FOUND)
         );
 
-        actionHandler.handleViewEffects(userId, episode.getWebtoon(), episodeId, ContentType.WEBNOVEL);
+        actionHandler.handleViewEffects(userId, episode.getWebtoon(), episode, ContentType.WEBNOVEL);
 
-        List<EpisodeResponse.EpisodeImage> images = webtoonImageService.getWebtoonImages(episodeId);
+        List<EpisodeImage> images = webtoonImageService.getWebtoonImages(episode.getImages());
         Long prevId = webtoonEpisodeRepository.findPrevEpisodeId(episode.getWebtoon().getId(), episode.getEpisodeNum());
         Long nextId = webtoonEpisodeRepository.findNextEpisodeId(episode.getWebtoon().getId(), episode.getEpisodeNum());
 
@@ -235,5 +239,20 @@ public class WebtoonEpisodeProvider implements EpisodeProvider {
     @Override
     public Optional<Integer> getMaxEpisodeNum(Long contentId) {
         return webtoonEpisodeRepository.findMaxEpisodeNumByContentId(contentId);
+    }
+
+    @Override
+    public List<Object[]> getGroupByStats(Long contentId) {
+        return webtoonEpisodeRepository.countGroupByStats(contentId);
+    }
+
+    @Override
+    public Page<EpisodeList> getAllEpisodesByContent(Long contentId, Pageable pageable) {
+        return webtoonEpisodeRepository.findAllByWebtoon_id(contentId, pageable);
+    }
+
+    @Override
+    public Page<EpisodeList> getEpisodesByEpisodeStatus(Long contentId, EpisodeStatus episodeStatus, Pageable pageable) {
+        return webtoonEpisodeRepository.findByWebtoon_IdAndEpisodeStatus(contentId, episodeStatus, pageable);
     }
 }
