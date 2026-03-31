@@ -56,7 +56,7 @@ public class CreatorWebtoonEpisodeController {
         return ResponseEntity.ok(result);
     }
 
-    @DeleteMapping("{/episodeId}")
+    @DeleteMapping("/{episodeId}")
     public ResponseEntity<Void> deleteWebtoonEpisode(
             @AuthenticationPrincipal PrincipalUser principalUser,
             @PathVariable Long contentId, @PathVariable Long episodeId
