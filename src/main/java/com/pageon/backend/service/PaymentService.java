@@ -124,7 +124,7 @@ public class PaymentService {
     private TossConfirm confirmConnection(PointTransaction transaction, PaymentRequest.Confirm confirm) {
         try {
 
-            return tossPaymentClient.confirmConnection(confirm);
+            return tossPaymentClient.confirmPaymentConnection(confirm);
 
         } catch (Exception e) {
             transaction.failedPayment();
@@ -189,7 +189,7 @@ public class PaymentService {
 
         try {
 
-            return tossPaymentClient.cancelConnection(paymentKey);
+            return tossPaymentClient.cancelPaymentConnection(paymentKey);
 
         } catch (Exception e) {
             throw new CustomException(ErrorCode.REFUND_API_FAILED);

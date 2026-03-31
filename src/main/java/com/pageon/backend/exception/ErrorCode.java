@@ -90,7 +90,7 @@ public enum ErrorCode {
     AMOUNT_NOT_MATCH("결제 금액이 일치하지 않습니다.", HttpStatus.BAD_REQUEST),
     PAYMENT_FAILED("결제 처리에 실패하였습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
     INVALID_TEMP_CODE("임시 코드가 일치하지 않습니다.", HttpStatus.UNAUTHORIZED),
-    TOSS_CLIENT_ERROR("결제 취소에 실패하였습니다.", HttpStatus.BAD_REQUEST),
+    TOSS_CLIENT_ERROR("토스 API 연결에 실패하였습니다.", HttpStatus.BAD_REQUEST),
     INSUFFICIENT_POINTS_FOR_REFUND("환불할 포인트 잔액이 부족합니다.", HttpStatus.BAD_REQUEST),
     REFUND_PERIOD_EXPIRED("환불 가능 기간이 지났습니다.", HttpStatus.BAD_REQUEST),
     REFUND_STATUS_INVALID("취소되지 않은 결제입니다.", HttpStatus.BAD_REQUEST),
@@ -104,7 +104,12 @@ public enum ErrorCode {
     NOT_CONTENT_OWNER("콘텐츠 작성자가 아닙니다.", HttpStatus.FORBIDDEN),
     DUPLICATE_SEQUENCE("웹툰 에피소드 이미지 순서가 중복되었습니다.", HttpStatus.BAD_REQUEST),
     INVALID_SEQUENCE("웹툰 에피소드 이미지 순서가 유효하지 않습니다.", HttpStatus.BAD_REQUEST),
-    IMAGE_NOT_FOUND("웹툰 에피소드 이미지를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),;
+    IMAGE_NOT_FOUND("웹툰 에피소드 이미지를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    INVALID_BANK_CODE("유효하지 않은 은행 코드입니다.", HttpStatus.BAD_REQUEST),
+    INVALID_BANK_ACCOUNT("계좌 인증에 실패했습니다.", HttpStatus.BAD_REQUEST),
+    ENCRYPTION_FAILED("계좌번호 암호화에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    DECRYPTION_FAILED("계좌번호 복호화에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    BANK_ACCOUNT_NOT_FOUND("계좌 정보를 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
 
 
 

@@ -195,7 +195,7 @@ class PaymentServiceTest {
         when(valueOperations.getAndDelete(redisKey)).thenReturn(cache);
 
         TossConfirm confirm = new TossConfirm("mid", "카드", "2025-03-19T00:00:00+09:00", null);
-        when(tossPaymentClient.confirmConnection(request)).thenReturn(confirm);
+        when(tossPaymentClient.confirmPaymentConnection(request)).thenReturn(confirm);
 
 
         //when
@@ -249,7 +249,7 @@ class PaymentServiceTest {
         // then
         assertEquals(ErrorCode.POINT_TRANSACTION_NOT_FOUND, ErrorCode.valueOf(exception.getErrorCode()));
         assertEquals("결제 내역을 찾을 수 없습니다.", exception.getErrorMessage());
-        verify(tossPaymentClient, never()).confirmConnection(request);
+        verify(tossPaymentClient, never()).confirmPaymentConnection(request);
 
     }
 
@@ -301,7 +301,7 @@ class PaymentServiceTest {
 
         // then
         verify(transaction).failedPayment();
-        verify(tossPaymentClient, never()).confirmConnection(request);
+        verify(tossPaymentClient, never()).confirmPaymentConnection(request);
         verify(pointTransactionRepository).save(transaction);
         assertEquals(ErrorCode.AMOUNT_NOT_MATCH, ErrorCode.valueOf(exception.getErrorCode()));
         assertEquals("결제 금액이 일치하지 않습니다.", exception.getErrorMessage());
@@ -322,7 +322,7 @@ class PaymentServiceTest {
         doNothing().when(idempotentService).isValidIdempotent(any());
         when(userRepository.findByIdWithLock(1L)).thenReturn(Optional.of(user));
         when(valueOperations.getAndDelete(redisKey)).thenReturn(cache);
-        when(tossPaymentClient.confirmConnection(any())).thenThrow(new RuntimeException("API 연결 실패"));
+        when(tossPaymentClient.confirmPaymentConnection(any())).thenThrow(new RuntimeException("API 연결 실패"));
 
         //when
         CustomException exception = assertThrows(CustomException.class,
@@ -351,7 +351,7 @@ class PaymentServiceTest {
         when(pointTransactionRepository.findByIdAndUserWithLock(1L, 1L)).thenReturn(Optional.of(transaction));
 
         TossCancel cancel = new TossCancel("mid", "CANCELED", "2025-03-19T00:00:00+09:00");
-        when(tossPaymentClient.cancelConnection("paymentKey")).thenReturn(cancel);
+        when(tossPaymentClient.cancelPaymentConnection("paymentKey")).thenReturn(cancel);
 
         //when
         paymentService.cancelPayment(1L, 1L);
@@ -359,7 +359,7 @@ class PaymentServiceTest {
         // then
         verify(user).changePoints(-100);
         verify(transaction).cancelPayment(any(LocalDateTime.class));
-        verify(tossPaymentClient).cancelConnection(eq("paymentKey"));
+        verify(tossPaymentClient).cancelPaymentConnection(eq("paymentKey"));
 
     }
 
@@ -379,7 +379,7 @@ class PaymentServiceTest {
         // then
         assertEquals(ErrorCode.USER_NOT_FOUND, ErrorCode.valueOf(exception.getErrorCode()));
         assertEquals("존재하지 않는 사용자입니다.", exception.getErrorMessage());
-        verify(tossPaymentClient, never()).cancelConnection("paymentKey");
+        verify(tossPaymentClient, never()).cancelPaymentConnection("paymentKey");
     }
 
     @Test
@@ -400,7 +400,7 @@ class PaymentServiceTest {
         // then
         assertEquals(ErrorCode.POINT_TRANSACTION_NOT_FOUND, ErrorCode.valueOf(exception.getErrorCode()));
         assertEquals("결제 내역을 찾을 수 없습니다.", exception.getErrorMessage());
-        verify(tossPaymentClient, never()).cancelConnection("paymentKey");
+        verify(tossPaymentClient, never()).cancelPaymentConnection("paymentKey");
         verify(user, never()).changePoints(-100);
 
     }
@@ -425,7 +425,7 @@ class PaymentServiceTest {
         // then
         assertEquals(ErrorCode.PAYMENT_NOT_COMPLETED, ErrorCode.valueOf(exception.getErrorCode()));
         assertEquals("완료된 결제만 취소할 수 있습니다.", exception.getErrorMessage());
-        verify(tossPaymentClient, never()).cancelConnection("paymentKey");
+        verify(tossPaymentClient, never()).cancelPaymentConnection("paymentKey");
         verify(user, never()).changePoints(-100);
 
     }
@@ -450,7 +450,7 @@ class PaymentServiceTest {
         // then
         assertEquals(ErrorCode.INSUFFICIENT_POINTS_FOR_REFUND, ErrorCode.valueOf(exception.getErrorCode()));
         assertEquals("환불할 포인트 잔액이 부족합니다.", exception.getErrorMessage());
-        verify(tossPaymentClient, never()).cancelConnection("paymentKey");
+        verify(tossPaymentClient, never()).cancelPaymentConnection("paymentKey");
         verify(user, never()).changePoints(-100);
 
     }
@@ -475,7 +475,7 @@ class PaymentServiceTest {
         // then
         assertEquals(ErrorCode.REFUND_PERIOD_EXPIRED, ErrorCode.valueOf(exception.getErrorCode()));
         assertEquals("환불 가능 기간이 지났습니다.", exception.getErrorMessage());
-        verify(tossPaymentClient, never()).cancelConnection("paymentKey");
+        verify(tossPaymentClient, never()).cancelPaymentConnection("paymentKey");
         verify(user, never()).changePoints(-100);
 
     }
@@ -493,7 +493,7 @@ class PaymentServiceTest {
         when(pointTransactionRepository.findByIdAndUserWithLock(1L, 1L)).thenReturn(Optional.of(transaction));
 
         TossCancel cancel = new TossCancel("mid", "FAILED", "2025-03-19T00:00:00+09:00");
-        when(tossPaymentClient.cancelConnection("paymentKey")).thenReturn(cancel);
+        when(tossPaymentClient.cancelPaymentConnection("paymentKey")).thenReturn(cancel);
 
         //when
         CustomException exception = assertThrows(CustomException.class,
@@ -520,7 +520,7 @@ class PaymentServiceTest {
         when(userRepository.findByIdWithLock(1L)).thenReturn(Optional.of(user));
         when(pointTransactionRepository.findByIdAndUserWithLock(1L, 1L)).thenReturn(Optional.of(transaction));
 
-        when(tossPaymentClient.cancelConnection(any())).thenThrow(new RuntimeException("API 연결 실패"));
+        when(tossPaymentClient.cancelPaymentConnection(any())).thenThrow(new RuntimeException("API 연결 실패"));
 
         // when
         CustomException exception = assertThrows(CustomException.class,
