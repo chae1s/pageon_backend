@@ -1,14 +1,18 @@
 package com.pageon.backend.service.provider;
 
+import com.pageon.backend.common.enums.EpisodeStatus;
 import com.pageon.backend.common.enums.PurchaseType;
 import com.pageon.backend.dto.response.CommentResponse;
+import com.pageon.backend.dto.response.creator.episode.EpisodeList;
 import com.pageon.backend.entity.User;
+import com.pageon.backend.entity.base.EpisodeBase;
 import com.pageon.backend.entity.base.EpisodeCommentBase;
 import com.pageon.backend.service.EpisodePurchaseService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 public interface EpisodeProvider {
@@ -36,4 +40,12 @@ public interface EpisodeProvider {
     void saveLike(User user, Long commentId);
     void deleteLike(Long userId, Long commentId);
     EpisodePurchaseService.EpisodeInfo getEpisodeInfo(Long episodeId, PurchaseType purchaseType);
+
+    Optional<Integer> getMaxEpisodeNum(Long contentId);
+
+    List<Object[]> getGroupByStats(Long contentId);
+
+    Page<EpisodeList> getAllEpisodesByContent(Long contentId, Pageable pageable);
+
+    Page<EpisodeList> getEpisodesByEpisodeStatus(Long contentId, EpisodeStatus episodeStatus, Pageable pageable);
 }

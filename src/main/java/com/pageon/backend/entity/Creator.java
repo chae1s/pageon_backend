@@ -27,9 +27,6 @@ public class Creator {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
-    // 웹툰, 웹소설 작가 구분
-    @Enumerated(EnumType.STRING)
-    private ContentType contentType;
 
     @Builder.Default
     private Boolean isActive = true;
@@ -45,10 +42,9 @@ public class Creator {
     @OneToMany(mappedBy = "creator")
     private List<Webnovel> webnovels = new ArrayList<>();
 
-    public Creator(String penName, User users, ContentType contentType) {
+    public Creator(String penName, User users) {
         this.penName = penName;
         this.user = users;
-        this.contentType = contentType;
         this.isActive = true;
         this.aiPolicyAgreedAt = LocalDateTime.now();
         this.agreedToAiPolicy = true;

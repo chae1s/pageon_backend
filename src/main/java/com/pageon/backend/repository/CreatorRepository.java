@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 
 public interface CreatorRepository extends JpaRepository<Creator, Long> {
-    Optional<Creator> findByUser(User users);
+    Optional<Creator> findByUser_Id(Long userId);
 
     Optional<Creator> findById(Long id);
 }

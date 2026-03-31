@@ -3,12 +3,13 @@ package com.pageon.backend.entity;
 import com.pageon.backend.common.base.BaseTimeEntity;
 import com.pageon.backend.common.enums.SerialDay;
 import com.pageon.backend.common.enums.SeriesStatus;
-import com.pageon.backend.dto.request.ContentUpdateRequest;
+import com.pageon.backend.common.enums.WorkStatus;
+import com.pageon.backend.dto.request.content.ContentUpdate;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.springframework.cglib.core.Local;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,13 +40,17 @@ public abstract class Content extends BaseTimeEntity {
     private Creator creator;
 
     @Builder.Default
-    @OneToMany(mappedBy = "content", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "content", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ContentKeyword> contentKeywords = new ArrayList<>();
 
     private String cover;
     // 연재 요일
     @Enumerated(EnumType.STRING)
     private SerialDay serialDay;
+
+    private LocalDate publishedAt;
+    @Enumerated(EnumType.STRING)
+    private WorkStatus workStatus;
 
     // 연재, 완결, 휴재
     @Builder.Default
@@ -65,22 +70,21 @@ public abstract class Content extends BaseTimeEntity {
     @Builder.Default
     private Integer episodeCount = 0;
 
+    @Builder.Default
+    private Long interestCount = 0L;
+
 
     public void updateCover(String s3Url) {
         this.cover = s3Url;
     }
 
-    public void updateContentInfo(ContentUpdateRequest request) {
-        if (request.getTitle() != null) this.title = request.getTitle();
-        if (request.getDescription() != null)this.description = request.getDescription();
-        if (request.getSerialDay() != null) this.serialDay = SerialDay.valueOf(request.getSerialDay());
+    public void updateContent(ContentUpdate request) {
+        this.title = request.getTitle();
+        this.description = request.getDescription();
+        this.serialDay = request.getSerialDay();
+        this.status = request.getSeriesStatus();
     }
 
-    public void updateKeywords(List<Keyword> keywords) {
-        if (keywords != null) {
-
-        }
-    }
 
     public void deleteContent() {
         this.setDeletedAt(LocalDateTime.now());
@@ -107,7 +111,24 @@ public abstract class Content extends BaseTimeEntity {
         this.episodeCount++;
     }
 
+    public void updateInterestCount(int num) {
+        this.interestCount = this.interestCount + num;
+    }
+
     public void updateViewCount() {
         this.viewCount++;
+    }
+
+    public void deletionRequest() {
+        this.workStatus = WorkStatus.DELETING;
+    }
+
+    public void deletionCompleted() {
+        this.workStatus = WorkStatus.DELETED;
+        this.setDeletedAt(LocalDateTime.now());
+    }
+
+    public void cancelDeletion() {
+        this.workStatus = WorkStatus.PUBLISHED;
     }
 }

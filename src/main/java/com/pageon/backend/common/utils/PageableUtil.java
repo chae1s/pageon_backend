@@ -59,4 +59,26 @@ public class PageableUtil {
     }
 
 
+    public static Pageable creatorContentPageable(Pageable pageable, String sort) {
+
+        Sort sortOrder;
+
+        if (sort.equals("update")) {
+            sortOrder = Sort.by(Sort.Order.desc("publishedAt"));
+        } else {
+            sortOrder = Sort.by(Sort.Order.desc("episodeUpdatedAt"));
+        }
+
+        return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sortOrder);
+    }
+
+    public static Pageable dashboardPageable(Pageable pageable, String sort) {
+        Sort sortOrder = switch (sort) {
+            case "latest" -> Sort.by(Sort.Order.desc("createdAt"));
+            case "published" -> Sort.by(Sort.Order.desc("publishedAt"));
+            default -> Sort.by(Sort.Order.desc("viewCount"));
+        };
+
+        return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sortOrder);
+    }
 }

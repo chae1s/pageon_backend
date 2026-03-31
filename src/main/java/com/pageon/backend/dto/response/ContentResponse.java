@@ -2,6 +2,7 @@ package com.pageon.backend.dto.response;
 
 import com.pageon.backend.common.enums.SerialDay;
 import com.pageon.backend.common.enums.SeriesStatus;
+import com.pageon.backend.common.enums.WorkStatus;
 import com.pageon.backend.entity.Content;
 import com.pageon.backend.entity.ReadingHistory;
 import lombok.AllArgsConstructor;
@@ -9,6 +10,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;

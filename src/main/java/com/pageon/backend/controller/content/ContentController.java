@@ -1,4 +1,4 @@
-package com.pageon.backend.controller;
+package com.pageon.backend.controller.content;
 
 import com.pageon.backend.dto.response.ContentResponse;
 import com.pageon.backend.dto.response.PageResponse;
@@ -7,19 +7,15 @@ import com.pageon.backend.service.ContentService;
 import com.pageon.backend.service.RankingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @RestController

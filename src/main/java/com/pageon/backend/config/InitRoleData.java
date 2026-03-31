@@ -1,3 +1,4 @@
+/*
 package com.pageon.backend.config;
 
 import com.pageon.backend.entity.Role;
@@ -33,3 +34,4 @@ public class InitRoleData implements ApplicationRunner {
         }
     }
 }
+*/

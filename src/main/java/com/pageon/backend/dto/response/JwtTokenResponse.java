@@ -11,4 +11,5 @@ public class JwtTokenResponse {
     private final String accessToken;
     private final OAuthProvider oAuthProvider;
     private final List<String> userRoles;
+    private final String targetPath;
 }

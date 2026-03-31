@@ -14,6 +14,8 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -46,6 +48,20 @@ public class FileUploadService {
 
         return cloudFrontUrl + "/" + fileName;
 
+    }
+
+    public List<String> uploadMultiple(MultipartFile[] files, String folder) {
+        List<String> uploaded = new ArrayList<>();
+        try {
+            for (MultipartFile file : files) {
+                uploaded.add(upload(file, folder));
+            }
+            return uploaded;
+        } catch (Exception e) {
+            // 이미 올라간 파일 삭제
+            uploaded.forEach(this::deleteFile);
+            throw e;
+        }
     }
 
     public String localFileUpload(File file, String folder) {
@@ -82,6 +98,10 @@ public class FileUploadService {
 
     public void deleteFile(String s3Url) {
         String splitStr = cloudFrontUrl + "/";
+
+        if (!s3Url.startsWith(splitStr)) {
+            throw new CustomException(ErrorCode.INVALID_FILE_URL);
+        }
 
         String fileName = s3Url.replace(splitStr, "");
 

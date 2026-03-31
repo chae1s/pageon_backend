@@ -65,4 +65,6 @@ public interface WebtoonRepository extends JpaRepository<Webtoon, Long> {
             "JOIN FETCH w.creator " +
             "WHERE w.status = 'COMPLETED' AND w.totalAverageRating >= 8 AND w.deletedAt IS NULL")
     Page<Webtoon> findTopRatedCompleted(Pageable pageable);
+
+    Optional<Webtoon> findByIdAndCreator_IdAndDeletedAtIsNull(Long contentId, Long creatorId);
 }

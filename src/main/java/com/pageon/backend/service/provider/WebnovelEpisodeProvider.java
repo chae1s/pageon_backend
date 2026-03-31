@@ -1,10 +1,13 @@
 package com.pageon.backend.service.provider;
 
 import com.pageon.backend.common.enums.ContentType;
+import com.pageon.backend.common.enums.EpisodeStatus;
 import com.pageon.backend.common.enums.PurchaseType;
 import com.pageon.backend.dto.response.CommentResponse;
 import com.pageon.backend.dto.response.EpisodeResponse;
+import com.pageon.backend.dto.response.creator.episode.EpisodeList;
 import com.pageon.backend.entity.*;
+import com.pageon.backend.entity.base.EpisodeBase;
 import com.pageon.backend.entity.base.EpisodeCommentBase;
 import com.pageon.backend.exception.CustomException;
 import com.pageon.backend.exception.ErrorCode;
@@ -20,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Component
@@ -45,7 +49,7 @@ public class WebnovelEpisodeProvider implements EpisodeProvider {
                 () -> new CustomException(ErrorCode.EPISODE_NOT_FOUND)
         );
 
-        actionHandler.handleViewEffects(userId, episode.getWebnovel(), episodeId, ContentType.WEBNOVEL);
+        actionHandler.handleViewEffects(userId, episode.getWebnovel(), episode, ContentType.WEBNOVEL);
 
         Long prevId = webnovelEpisodeRepository.findPrevEpisodeId(episode.getWebnovel().getId(), episode.getEpisodeNum());
         Long nextId = webnovelEpisodeRepository.findNextEpisodeId(episode.getWebnovel().getId(), episode.getEpisodeNum());
@@ -228,5 +232,25 @@ public class WebnovelEpisodeProvider implements EpisodeProvider {
                 price,
                 episode
         );
+    }
+
+    @Override
+    public Optional<Integer> getMaxEpisodeNum(Long contentId) {
+        return webnovelEpisodeRepository.findMaxEpisodeNumByContentId(contentId);
+    }
+
+    @Override
+    public List<Object[]> getGroupByStats(Long contentId) {
+        return webnovelEpisodeRepository.countGroupByStats(contentId);
+    }
+
+    @Override
+    public Page<EpisodeList> getAllEpisodesByContent(Long contentId, Pageable pageable) {
+        return webnovelEpisodeRepository.findAllByWebnovel_id(contentId, pageable);
+    }
+
+    @Override
+    public Page<EpisodeList> getEpisodesByEpisodeStatus(Long contentId, EpisodeStatus episodeStatus, Pageable pageable) {
+        return webnovelEpisodeRepository.findByWebnovel_IdAndEpisodeStatus(contentId, episodeStatus, pageable);
     }
 }

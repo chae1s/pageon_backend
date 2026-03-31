@@ -17,7 +17,8 @@ spring:
   servlet:
     multipart:
       enabled: true
-      max-file-size: 20MB
+      max-file-size: 50MB
+      max-request-size: 150MB
 
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -25,7 +26,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: false
+    show-sql: true
     defer-datasource-initialization: true
     properties:
       hibernate:
@@ -36,6 +37,8 @@ spring:
         order_updates: true
         format_sql: true
         default_batch_fetch_size: 100
+        highlight_sql: true
+        use_sql_comments: true
     open-in-view: false
 
 

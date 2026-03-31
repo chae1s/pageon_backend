@@ -1,9 +1,16 @@
 package com.pageon.backend.repository;
 
+import com.pageon.backend.common.enums.EpisodeStatus;
+import com.pageon.backend.dto.response.creator.episode.EpisodeList;
+import com.pageon.backend.dto.response.creator.episode.EpisodeStats;
 import com.pageon.backend.entity.WebnovelEpisode;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.security.core.parameters.P;
 
 import java.util.List;
 import java.util.Optional;
@@ -11,7 +18,6 @@ import java.util.Optional;
 public interface WebnovelEpisodeRepository extends JpaRepository<WebnovelEpisode, Long> {
 
     List<WebnovelEpisode> findByWebnovelId(Long id);
-    Optional<WebnovelEpisode> findById(Long id);
 
     @Query("SELECT w FROM WebnovelEpisode w JOIN FETCH w.webnovel WHERE w.id = :episodeId")
     Optional<WebnovelEpisode> findWithWebnovelById(@Param("episodeId") Long episodeId);
@@ -35,4 +41,29 @@ public interface WebnovelEpisodeRepository extends JpaRepository<WebnovelEpisode
         LIMIT 1
     """)
     Long findNextEpisodeId(@Param("webnovelId") Long webnovelId, @Param("currentEpisodeNum") int currentEpisodeNum);
+
+    @Query("SELECT MAX(e.episodeNum) FROM WebnovelEpisode e " +
+            "WHERE e.webnovel.id = :contentId")
+    Optional<Integer> findMaxEpisodeNumByContentId(Long contentId);
+
+    @Query("SELECT e.episodeStatus, COUNT(e) FROM WebnovelEpisode e " +
+            "WHERE e.webnovel.id = :contentId GROUP BY e.episodeStatus")
+    List<Object[]> countGroupByStats(@Param("contentId") Long contentId);
+
+
+
+    @Query("SELECT new com.pageon.backend.dto.response.creator.episode.EpisodeList(" +
+            "e.id, e.episodeNum, e.episodeTitle, e.averageRating, e.episodeStatus, e.publishedAt, e.createdAt) " +
+            "FROM WebnovelEpisode e " +
+            "WHERE e.webnovel.id = :contentId AND e.deletedAt IS NULL")
+    Page<EpisodeList> findAllByWebnovel_id(@Param("contentId") Long contentId, Pageable pageable);
+
+    @Query("SELECT new com.pageon.backend.dto.response.creator.episode.EpisodeList(" +
+            "e.id, e.episodeNum, e.episodeTitle, e.averageRating, e.episodeStatus, e.publishedAt, e.createdAt) " +
+            "FROM WebnovelEpisode e " +
+            "WHERE e.webnovel.id = :contentId AND e.episodeStatus = :episodeStatus AND e.deletedAt IS NULL")
+    Page<EpisodeList> findByWebnovel_IdAndEpisodeStatus(Long contentId, @Param("episodeStatus") EpisodeStatus episodeStatus, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"webnovel.creator"})
+    Optional<WebnovelEpisode> findById(Long episodeId);
 }
