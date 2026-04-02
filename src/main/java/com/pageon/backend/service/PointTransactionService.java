@@ -3,9 +3,11 @@ package com.pageon.backend.service;
 import com.pageon.backend.common.enums.TransactionStatus;
 import com.pageon.backend.common.enums.TransactionType;
 import com.pageon.backend.dto.response.PointTransactionResponse;
+import com.pageon.backend.entity.Content;
 import com.pageon.backend.entity.PointTransaction;
 import com.pageon.backend.entity.User;
 import com.pageon.backend.repository.PointTransactionRepository;
+import com.pageon.backend.service.creator.CreatorEarningService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -20,9 +22,10 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class PointTransactionService {
     private final PointTransactionRepository pointTransactionRepository;
+    private final CreatorEarningService creatorEarningService;
 
     @Transactional
-    public void usePoint(User user, int point, String description, Long domainId) {
+    public void usePoint(User user, int point, String description, Long domainId, Content content) {
         user.changePoints(-point);
 
         PointTransaction pointTransaction = PointTransaction.builder()
@@ -37,6 +40,8 @@ public class PointTransactionService {
                 .build();
 
         pointTransactionRepository.save(pointTransaction);
+
+        creatorEarningService.registerCreatorEarning(content, pointTransaction);
     }
 
     @Transactional(readOnly = true)

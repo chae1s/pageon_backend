@@ -64,8 +64,12 @@ class EpisodePurchaseServiceTest {
 
     private EpisodePurchaseService.EpisodeInfo mockEpisodeInfo() {
         EpisodeBase episode = mock(EpisodeBase.class);
+        Content content = mock(Content.class);
+
+        lenient().when(content.getId()).thenReturn(1L);
+        lenient().when(content.getTitle()).thenReturn("제목");
         lenient().when(episode.getEpisodeNum()).thenReturn(1);
-        return new EpisodePurchaseService.EpisodeInfo(1L, "제목", 100, episode);
+        return new EpisodePurchaseService.EpisodeInfo(content, 100, episode);
     }
 
     private void givenCommonSetup(User user, EpisodePurchaseService.EpisodeInfo episodeInfo) {
@@ -82,7 +86,7 @@ class EpisodePurchaseServiceTest {
         EpisodePurchaseService.EpisodeInfo episodeInfo = mockEpisodeInfo();
         givenCommonSetup(user, episodeInfo);
 
-        when(episodePurchaseRepository.findByUser_IdAndContentIdAndEpisodeId(any(), any(), any()))
+        when(episodePurchaseRepository.findByUser_IdAndContent_IdAndEpisodeId(any(), any(), any()))
                 .thenReturn(Optional.empty());
 
         EpisodePurchase savedPurchase = mock(EpisodePurchase.class);
@@ -98,7 +102,7 @@ class EpisodePurchaseServiceTest {
         verify(episodePurchaseRepository).save(captor.capture());
         assertEquals(PurchaseType.OWN, captor.getValue().getPurchaseType());
         assertNull(captor.getValue().getExpiredAt());
-        verify(pointTransactionService).usePoint(eq(user), eq(100), any(), any());
+        verify(pointTransactionService).usePoint(eq(user), eq(100), any(), any(), any());
         verify(actionLogService).createActionLog(any(), any(), any(), eq(ActionType.PURCHASE), eq(0));
     }
 
@@ -110,7 +114,7 @@ class EpisodePurchaseServiceTest {
         EpisodePurchaseService.EpisodeInfo episodeInfo = mockEpisodeInfo();
         givenCommonSetup(user, episodeInfo);
 
-        when(episodePurchaseRepository.findByUser_IdAndContentIdAndEpisodeId(any(), any(), any()))
+        when(episodePurchaseRepository.findByUser_IdAndContent_IdAndEpisodeId(any(), any(), any()))
                 .thenReturn(Optional.empty());
 
         EpisodePurchase savedPurchase = mock(EpisodePurchase.class);
@@ -126,7 +130,7 @@ class EpisodePurchaseServiceTest {
         verify(episodePurchaseRepository).save(captor.capture());
         assertEquals(PurchaseType.RENT, captor.getValue().getPurchaseType());
         assertNotNull(captor.getValue().getExpiredAt());
-        verify(pointTransactionService).usePoint(eq(user), eq(100), any(), any());
+        verify(pointTransactionService).usePoint(eq(user), eq(100), any(), any(), any());
         verify(actionLogService).createActionLog(any(), any(), any(), eq(ActionType.RENTAL), eq(0));
     }
 
@@ -143,7 +147,7 @@ class EpisodePurchaseServiceTest {
         doNothing().when(idempotentService).isValidIdempotent(any());
         when(userRepository.findByIdWithLock(1L)).thenReturn(Optional.of(user));
         when(episodeProvider.getEpisodeInfo(any(), any())).thenReturn(episodeInfo);
-        when(episodePurchaseRepository.findByUser_IdAndContentIdAndEpisodeId(any(), any(), any()))
+        when(episodePurchaseRepository.findByUser_IdAndContent_IdAndEpisodeId(any(), any(), any()))
                 .thenReturn(Optional.of(existing));
 
         // when & then
@@ -187,7 +191,7 @@ class EpisodePurchaseServiceTest {
         EpisodePurchase existing = mock(EpisodePurchase.class);
         when(existing.getPurchaseType()).thenReturn(PurchaseType.RENT);
         when(existing.getExpiredAt()).thenReturn(LocalDateTime.now().plusDays(1));
-        when(episodePurchaseRepository.findByUser_IdAndContentIdAndEpisodeId(any(), any(), any()))
+        when(episodePurchaseRepository.findByUser_IdAndContent_IdAndEpisodeId(any(), any(), any()))
                 .thenReturn(Optional.of(existing));
 
         // when & then
@@ -210,7 +214,7 @@ class EpisodePurchaseServiceTest {
         when(existing.getPurchaseType()).thenReturn(PurchaseType.RENT);
         when(existing.getExpiredAt()).thenReturn(LocalDateTime.now().minusDays(1)); // 만료
         when(existing.getId()).thenReturn(1L);
-        when(episodePurchaseRepository.findByUser_IdAndContentIdAndEpisodeId(any(), any(), any()))
+        when(episodePurchaseRepository.findByUser_IdAndContent_IdAndEpisodeId(any(), any(), any()))
                 .thenReturn(Optional.of(existing));
 
         // when
@@ -218,7 +222,7 @@ class EpisodePurchaseServiceTest {
 
         // then
         verify(existing).extendRental(any(LocalDateTime.class));
-        verify(pointTransactionService).usePoint(eq(user), eq(100), any(), any());
+        verify(pointTransactionService).usePoint(eq(user), eq(100), any(), any(), any());
         verify(actionLogService).createActionLog(any(), any(), any(), eq(ActionType.RENTAL), eq(0));
     }
 
@@ -234,7 +238,7 @@ class EpisodePurchaseServiceTest {
         when(existing.getPurchaseType()).thenReturn(PurchaseType.RENT);
         when(existing.getExpiredAt()).thenReturn(LocalDateTime.now().minusDays(1)); // 만료
         when(existing.getId()).thenReturn(1L);
-        when(episodePurchaseRepository.findByUser_IdAndContentIdAndEpisodeId(any(), any(), any()))
+        when(episodePurchaseRepository.findByUser_IdAndContent_IdAndEpisodeId(any(), any(), any()))
                 .thenReturn(Optional.of(existing));
 
         // when
@@ -242,7 +246,7 @@ class EpisodePurchaseServiceTest {
 
         // then
         verify(existing).upgradeToPurchase();
-        verify(pointTransactionService).usePoint(eq(user), eq(100), any(), any());
+        verify(pointTransactionService).usePoint(eq(user), eq(100), any(), any(), any());
     }
 
     @Test
@@ -267,7 +271,7 @@ class EpisodePurchaseServiceTest {
         // given
         EpisodePurchase purchase = mock(EpisodePurchase.class);
         when(purchase.getPurchaseType()).thenReturn(PurchaseType.OWN);
-        when(episodePurchaseRepository.findByUser_IdAndContentIdAndEpisodeId(1L, 1L, 1L))
+        when(episodePurchaseRepository.findByUser_IdAndContent_IdAndEpisodeId(1L, 1L, 1L))
                 .thenReturn(Optional.of(purchase));
 
         // when
@@ -284,7 +288,7 @@ class EpisodePurchaseServiceTest {
         EpisodePurchase rental = mock(EpisodePurchase.class);
         when(rental.getPurchaseType()).thenReturn(PurchaseType.RENT);
         when(rental.getExpiredAt()).thenReturn(LocalDateTime.now().plusDays(1));
-        when(episodePurchaseRepository.findByUser_IdAndContentIdAndEpisodeId(1L, 1L, 1L))
+        when(episodePurchaseRepository.findByUser_IdAndContent_IdAndEpisodeId(1L, 1L, 1L))
                 .thenReturn(Optional.of(rental));
 
         // when
@@ -301,7 +305,7 @@ class EpisodePurchaseServiceTest {
         EpisodePurchase rental = mock(EpisodePurchase.class);
         when(rental.getPurchaseType()).thenReturn(PurchaseType.RENT);
         when(rental.getExpiredAt()).thenReturn(LocalDateTime.now().minusDays(1));
-        when(episodePurchaseRepository.findByUser_IdAndContentIdAndEpisodeId(1L, 1L, 1L))
+        when(episodePurchaseRepository.findByUser_IdAndContent_IdAndEpisodeId(1L, 1L, 1L))
                 .thenReturn(Optional.of(rental));
 
         // when
@@ -315,7 +319,7 @@ class EpisodePurchaseServiceTest {
     @DisplayName("구매 기록 없으면 false 반환")
     void checkPurchaseHistory_withNoPurchase_shouldReturnFalse() {
         // given
-        when(episodePurchaseRepository.findByUser_IdAndContentIdAndEpisodeId(1L, 1L, 1L))
+        when(episodePurchaseRepository.findByUser_IdAndContent_IdAndEpisodeId(1L, 1L, 1L))
                 .thenReturn(Optional.empty());
 
         // when

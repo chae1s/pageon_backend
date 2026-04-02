@@ -1,7 +1,6 @@
 package com.pageon.backend.entity;
 
 import com.pageon.backend.common.base.BaseTimeEntity;
-import com.pageon.backend.common.enums.ContentType;
 import com.pageon.backend.common.enums.PurchaseType;
 import jakarta.persistence.*;
 import lombok.*;
@@ -26,7 +25,9 @@ public class EpisodePurchase extends BaseTimeEntity {
     @JoinColumn(name = "user_id")
     private User user;
 
-    private Long contentId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "content_id")
+    private Content content;
     private Long episodeId;
 
     @Enumerated(EnumType.STRING)
