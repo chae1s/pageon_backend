@@ -1,5 +1,6 @@
 package com.pageon.backend.service.provider;
 
+import com.pageon.backend.common.enums.EpisodeStatus;
 import com.pageon.backend.common.enums.SerialDay;
 import com.pageon.backend.dto.response.EpisodeResponse;
 import com.pageon.backend.entity.*;
@@ -38,7 +39,7 @@ public class WebnovelProvider implements ContentProvider{
     @Override
     public List<EpisodeResponse.Summary> findEpisodes(Long userId, Long contentId) {
 
-        List<WebnovelEpisode> episodes = webnovelEpisodeRepository.findByWebnovelId(contentId);
+        List<WebnovelEpisode> episodes = webnovelEpisodeRepository.findByWebnovelIdAndEpisodeStatus(contentId, EpisodeStatus.PUBLISHED);
         if (userId == null) {
             return episodes.stream()
                     .map(e -> EpisodeResponse.Summary.fromEntity(e, null)).toList();

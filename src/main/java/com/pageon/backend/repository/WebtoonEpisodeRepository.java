@@ -11,18 +11,20 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
 public interface WebtoonEpisodeRepository extends JpaRepository<WebtoonEpisode, Long> {
 
-    List<WebtoonEpisode> findByWebtoonId(Long id);
+
+    List<WebtoonEpisode> findByWebtoonIdAndEpisodeStatus(Long id, EpisodeStatus episodeStatus);
 
     @Query("SELECT w FROM WebtoonEpisode w " +
             "JOIN FETCH w.webtoon wt " +
             "JOIN FETCH wt.creator " +
             "LEFT JOIN FETCH w.images " +
-            "WHERE w.id = :episodeId")
+            "WHERE w.id = :episodeId AND w.episodeStatus = 'PUBLISHED'")
     Optional<WebtoonEpisode> findWithWebtoonById(@Param("episodeId") Long episodeId);
 
     @Query("""
@@ -53,17 +55,21 @@ public interface WebtoonEpisodeRepository extends JpaRepository<WebtoonEpisode, 
     List<Object[]> countGroupByStats(@Param("contentId") Long contentId);
 
     @Query("SELECT new com.pageon.backend.dto.response.creator.episode.EpisodeList(" +
-            "e.id, e.episodeNum, e.episodeTitle, e.averageRating, e.episodeStatus, e.publishedAt, e.createdAt) " +
+            "e.id, e.episodeNum, e.episodeTitle, e.averageRating, e.episodeStatus, e.publishedAt, e.createdAt, e.viewCount) " +
             "FROM WebtoonEpisode e " +
             "WHERE e.webtoon.id = :contentId AND e.deletedAt IS NULL")
     Page<EpisodeList> findAllByWebtoon_id(@Param("contentId") Long contentId, Pageable pageable);
 
     @Query("SELECT new com.pageon.backend.dto.response.creator.episode.EpisodeList(" +
-            "e.id, e.episodeNum, e.episodeTitle, e.averageRating, e.episodeStatus, e.publishedAt, e.createdAt) " +
+            "e.id, e.episodeNum, e.episodeTitle, e.averageRating, e.episodeStatus, e.publishedAt, e.createdAt, e.viewCount) " +
             "FROM WebtoonEpisode e " +
             "WHERE e.webtoon.id = :contentId AND e.episodeStatus = :episodeStatus AND e.deletedAt IS NULL")
     Page<EpisodeList> findByWebtoon_IdAndEpisodeStatus(@Param("contentId") Long contentId, @Param("episodeStatus") EpisodeStatus episodeStatus, Pageable pageable);
 
     @EntityGraph(attributePaths = {"webtoon", "images"})
     Optional<WebtoonEpisode> findById(Long episodeId);
+
+    @Query("SELECT we FROM WebtoonEpisode we " +
+            "WHERE we.publishedAt = :publishedAt AND we.episodeStatus = 'SCHEDULED'")
+    List<WebtoonEpisode> findAllByPublishedAt(LocalDate publishedAt);
 }

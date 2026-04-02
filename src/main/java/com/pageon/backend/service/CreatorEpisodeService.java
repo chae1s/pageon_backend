@@ -1,5 +1,6 @@
 package com.pageon.backend.service;
 
+import com.pageon.backend.common.annotation.ExecutionTimer;
 import com.pageon.backend.common.enums.EpisodeStatus;
 import com.pageon.backend.common.utils.PageableUtil;
 import com.pageon.backend.dto.request.episode.WebnovelEpisodeCreate;
@@ -10,6 +11,7 @@ import com.pageon.backend.dto.response.PageResponse;
 import com.pageon.backend.dto.response.creator.episode.*;
 import com.pageon.backend.dto.response.episode.EpisodeImage;
 import com.pageon.backend.entity.*;
+import com.pageon.backend.entity.base.EpisodeBase;
 import com.pageon.backend.exception.CustomException;
 import com.pageon.backend.exception.ErrorCode;
 import com.pageon.backend.repository.*;
@@ -22,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -61,11 +64,12 @@ public class CreatorEpisodeService {
                 .build();
 
         webnovelEpisodeRepository.save(episode);
-
+        webnovel.updateEpisode(request.getPublishedAt());
         return episode.getId();
     }
 
     @Transactional
+    @ExecutionTimer
     public Long createWebtoonEpisode(Long userId, Long contentId, WebtoonEpisodeCreate request, MultipartFile[] files) {
         if (files == null || files.length == 0) {
             throw new CustomException(ErrorCode.FILE_EMPTY);
@@ -92,7 +96,7 @@ public class CreatorEpisodeService {
         webtoonEpisodeRepository.save(episode);
 
         webtoonImageService.registerWebtoonImage(contentId, episode, files);
-
+        webtoon.updateEpisode(request.getPublishedAt());
         return episode.getId();
     }
 
@@ -229,6 +233,28 @@ public class CreatorEpisodeService {
 
         webtoonImageService.deleteWebtoonImages(episode);
         episode.deleteEpisode();
+    }
+
+    @Transactional
+    public void publishScheduledWebnovelEpisodes(LocalDate publishedAt) {
+        List<WebnovelEpisode> webnovelEpisodes = webnovelEpisodeRepository.findAllByPublishedAt(publishedAt);
+
+        if (webnovelEpisodes.isEmpty()) {
+            return;
+        }
+
+        webnovelEpisodes.forEach(EpisodeBase::publish);
+    }
+
+    @Transactional
+    public void publishScheduledWebtoonEpisodes(LocalDate publishedAt) {
+        List<WebtoonEpisode> webtoonEpisodes = webtoonEpisodeRepository.findAllByPublishedAt(publishedAt);
+
+        if (webtoonEpisodes.isEmpty()) {
+            return;
+        }
+
+        webtoonEpisodes.forEach(EpisodeBase::publish);
     }
 
     private Creator getCreator(Long userId) {

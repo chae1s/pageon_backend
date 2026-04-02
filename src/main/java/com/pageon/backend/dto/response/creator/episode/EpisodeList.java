@@ -19,5 +19,6 @@ public class EpisodeList {
     private EpisodeStatus episodeStatus;
     private LocalDate publishedAt;
     private LocalDateTime createdAt;
+    private Long viewCount;
 
 }

@@ -14,7 +14,9 @@ import java.util.List;
 @Getter
 @SuperBuilder
 @DynamicUpdate
-@Table(name = "webnovel_episodes")
+@Table(name = "webnovel_episodes", indexes = {
+        @Index(name = "idx_wne_published_status", columnList = "published_at, episode_status")
+})
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 public class WebnovelEpisode extends EpisodeBase {

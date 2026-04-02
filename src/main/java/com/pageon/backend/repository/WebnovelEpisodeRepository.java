@@ -10,17 +10,18 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
 public interface WebnovelEpisodeRepository extends JpaRepository<WebnovelEpisode, Long> {
 
-    List<WebnovelEpisode> findByWebnovelId(Long id);
+    List<WebnovelEpisode> findByWebnovelIdAndEpisodeStatus(Long id, EpisodeStatus episodeStatus);
 
     @Query("SELECT w FROM WebnovelEpisode w " +
             "JOIN FETCH w.webnovel wn " +
             "JOIN FETCH wn.creator " +
-            "WHERE w.id = :episodeId")
+            "WHERE w.id = :episodeId AND w.episodeStatus = 'PUBLISHED'")
     Optional<WebnovelEpisode> findWithWebnovelById(@Param("episodeId") Long episodeId);
 
 
@@ -54,17 +55,21 @@ public interface WebnovelEpisodeRepository extends JpaRepository<WebnovelEpisode
 
 
     @Query("SELECT new com.pageon.backend.dto.response.creator.episode.EpisodeList(" +
-            "e.id, e.episodeNum, e.episodeTitle, e.averageRating, e.episodeStatus, e.publishedAt, e.createdAt) " +
+            "e.id, e.episodeNum, e.episodeTitle, e.averageRating, e.episodeStatus, e.publishedAt, e.createdAt, e.viewCount) " +
             "FROM WebnovelEpisode e " +
             "WHERE e.webnovel.id = :contentId AND e.deletedAt IS NULL")
     Page<EpisodeList> findAllByWebnovel_id(@Param("contentId") Long contentId, Pageable pageable);
 
     @Query("SELECT new com.pageon.backend.dto.response.creator.episode.EpisodeList(" +
-            "e.id, e.episodeNum, e.episodeTitle, e.averageRating, e.episodeStatus, e.publishedAt, e.createdAt) " +
+            "e.id, e.episodeNum, e.episodeTitle, e.averageRating, e.episodeStatus, e.publishedAt, e.createdAt, e.viewCount) " +
             "FROM WebnovelEpisode e " +
             "WHERE e.webnovel.id = :contentId AND e.episodeStatus = :episodeStatus AND e.deletedAt IS NULL")
     Page<EpisodeList> findByWebnovel_IdAndEpisodeStatus(Long contentId, @Param("episodeStatus") EpisodeStatus episodeStatus, Pageable pageable);
 
     @EntityGraph(attributePaths = {"webnovel.creator"})
     Optional<WebnovelEpisode> findById(Long episodeId);
+
+    @Query("SELECT we FROM WebnovelEpisode we " +
+            "WHERE we.publishedAt = :publishedAt AND we.episodeStatus = 'SCHEDULED'")
+    List<WebnovelEpisode> findAllByPublishedAt(LocalDate publishedAt);
 }
