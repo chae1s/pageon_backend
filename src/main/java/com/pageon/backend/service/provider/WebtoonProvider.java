@@ -44,7 +44,7 @@ public class WebtoonProvider implements ContentProvider {
                     .map(e -> EpisodeResponse.Summary.fromEntity(e, null)).toList();
         } else {
             return episodes.stream().map(e -> {
-                EpisodePurchase episodePurchase = episodePurchaseRepository.findByUser_IdAndContentIdAndEpisodeId(userId, contentId, e.getId()).orElse(null);
+                EpisodePurchase episodePurchase = episodePurchaseRepository.findByUser_IdAndContent_IdAndEpisodeId(userId, contentId, e.getId()).orElse(null);
                 return EpisodeResponse.Summary.fromEntity(
                         e,
                         (episodePurchase != null) ? EpisodeResponse.Purchase.fromEntity(episodePurchase) : null

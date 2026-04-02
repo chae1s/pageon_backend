@@ -8,7 +8,6 @@ import com.pageon.backend.dto.response.EpisodeResponse;
 import com.pageon.backend.dto.response.creator.episode.EpisodeList;
 import com.pageon.backend.dto.response.episode.EpisodeImage;
 import com.pageon.backend.entity.*;
-import com.pageon.backend.entity.base.EpisodeBase;
 import com.pageon.backend.entity.base.EpisodeCommentBase;
 import com.pageon.backend.exception.CustomException;
 import com.pageon.backend.exception.ErrorCode;
@@ -229,8 +228,7 @@ public class WebtoonEpisodeProvider implements EpisodeProvider {
         Integer price = (purchaseType == PurchaseType.OWN) ? episode.getPurchasePrice() : episode.getRentalPrice();
 
         return new EpisodePurchaseService.EpisodeInfo(
-                episode.getParentContent().getId(),
-                episode.getParentContent().getTitle(),
+                episode.getParentContent(),
                 price,
                 episode
         );

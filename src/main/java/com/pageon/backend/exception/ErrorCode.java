@@ -109,7 +109,9 @@ public enum ErrorCode {
     INVALID_BANK_ACCOUNT("계좌 인증에 실패했습니다.", HttpStatus.BAD_REQUEST),
     ENCRYPTION_FAILED("계좌번호 암호화에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
     DECRYPTION_FAILED("계좌번호 복호화에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
-    BANK_ACCOUNT_NOT_FOUND("계좌 정보를 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
+    BANK_ACCOUNT_NOT_FOUND("계좌 정보를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    REVENUE_NOT_FOUND("수익 정보를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    ;
 
 
 

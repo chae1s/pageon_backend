@@ -2,7 +2,6 @@ package com.pageon.backend.repository;
 
 import com.pageon.backend.common.enums.EpisodeStatus;
 import com.pageon.backend.dto.response.creator.episode.EpisodeList;
-import com.pageon.backend.dto.response.creator.episode.EpisodeStats;
 import com.pageon.backend.entity.WebnovelEpisode;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -10,7 +9,6 @@ import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.security.core.parameters.P;
 
 import java.util.List;
 import java.util.Optional;
@@ -19,7 +17,10 @@ public interface WebnovelEpisodeRepository extends JpaRepository<WebnovelEpisode
 
     List<WebnovelEpisode> findByWebnovelId(Long id);
 
-    @Query("SELECT w FROM WebnovelEpisode w JOIN FETCH w.webnovel WHERE w.id = :episodeId")
+    @Query("SELECT w FROM WebnovelEpisode w " +
+            "JOIN FETCH w.webnovel wn " +
+            "JOIN FETCH wn.creator " +
+            "WHERE w.id = :episodeId")
     Optional<WebnovelEpisode> findWithWebnovelById(@Param("episodeId") Long episodeId);
 
 

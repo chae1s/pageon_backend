@@ -26,12 +26,14 @@ public class CreatorBankAccount extends BaseTimeEntity {
     @JoinColumn(name = "creator_id")
     private Creator creator;
 
+    @Enumerated(EnumType.STRING)
     private BankCode bankCode;
     private String accountNumber;
     private Boolean isValid;
 
     public void deleteAccount() {
         this.setDeletedAt(LocalDateTime.now());
+        this.isValid = false;
     }
 
 }

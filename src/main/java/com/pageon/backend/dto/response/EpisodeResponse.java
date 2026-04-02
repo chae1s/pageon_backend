@@ -9,6 +9,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -22,7 +23,7 @@ public class EpisodeResponse {
         private Long id;
         private Integer episodeNum;
         private String episodeTitle;
-        private LocalDateTime createdAt;
+        private LocalDate publishedAt;
         private Integer purchasePrice;
         private Integer rentalPrice;
         private EpisodeResponse.Purchase episodePurchase;
@@ -32,7 +33,7 @@ public class EpisodeResponse {
                     .id(episode.getId())
                     .episodeNum(episode.getEpisodeNum())
                     .episodeTitle(episode.getEpisodeTitle())
-                    .createdAt(episode.getCreatedAt())
+                    .publishedAt(episode.getPublishedAt())
                     .purchasePrice(episode.getPurchasePrice())
                     .rentalPrice(episode.getRentalPrice())
                     .episodePurchase(purchase)

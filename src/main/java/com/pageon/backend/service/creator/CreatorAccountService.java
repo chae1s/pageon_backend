@@ -76,9 +76,11 @@ public class CreatorAccountService {
                 () -> new CustomException(ErrorCode.CREATOR_NOT_FOUND)
         );
 
-        CreatorBankAccount creatorBankAccount = creatorBankaccountRepository.findByCreator_IdAndDeletedAtIsNull(creator.getId()).orElseThrow(
-                () -> new CustomException(ErrorCode.BANK_ACCOUNT_NOT_FOUND)
-        );
+        CreatorBankAccount creatorBankAccount = creatorBankaccountRepository.findByCreator_IdAndDeletedAtIsNull(creator.getId()).orElse(null);
+
+        if (creatorBankAccount == null) {
+            return new BankAccount();
+        }
 
         String accountNumber = aesEncryptionUtil.decrypt((creatorBankAccount.getAccountNumber()));
 

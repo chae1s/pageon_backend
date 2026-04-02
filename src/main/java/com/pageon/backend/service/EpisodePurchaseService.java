@@ -31,7 +31,7 @@ public class EpisodePurchaseService {
     private final IdempotentService idempotentService;
 
 
-    public record EpisodeInfo(Long contentId, String contentTitle, Integer episodePrice, EpisodeBase episodeBase) {}
+    public record EpisodeInfo(Content content, Integer episodePrice, EpisodeBase episodeBase) {}
 
     @Transactional
     public void createPurchaseHistory(Long userId, String contentType, Long episodeId, PurchaseType purchaseType) {
@@ -52,28 +52,29 @@ public class EpisodePurchaseService {
 
         Integer episodePrice = episodeInfo.episodePrice;
 
-        Long contentId = episodeInfo.contentId;
+        Content content = episodeInfo.content;
+
 
         if (user.getPointBalance() < episodePrice) {
             throw new CustomException(ErrorCode.INSUFFICIENT_POINTS);
         }
 
         // 구매, 대여, 재대여 구분
-        EpisodePurchase episodePurchase = validateEpisodePurchase(user, ContentType.fromUrlPath(contentType), contentId, episodeId, purchaseType);
+        EpisodePurchase episodePurchase = validateEpisodePurchase(user, ContentType.fromUrlPath(contentType), content, episodeId, purchaseType);
 
         String description = String.format("%s %d화 %s",
-                episodeInfo.contentTitle,
+                content.getTitle(),
                 episodeInfo.episodeBase.getEpisodeNum(),
                 purchaseType == PurchaseType.OWN ? "소장" : "대여"
         );
 
 
-        pointTransactionService.usePoint(user, episodePrice, description, episodePurchase.getId());
+        pointTransactionService.usePoint(user, episodePrice, description, episodePurchase.getId(), content);
 
     }
 
     public Boolean checkPurchaseHistory(Long userId, Long contentId, Long episodeId) {
-        EpisodePurchase episodePurchase = episodePurchaseRepository.findByUser_IdAndContentIdAndEpisodeId(userId, contentId, episodeId).orElse(null);
+        EpisodePurchase episodePurchase = episodePurchaseRepository.findByUser_IdAndContent_IdAndEpisodeId(userId, contentId, episodeId).orElse(null);
 
         if (episodePurchase == null) {
             return false;
@@ -90,17 +91,17 @@ public class EpisodePurchaseService {
     }
 
 
-    private EpisodePurchase validateEpisodePurchase(User user, ContentType contentType, Long contentId, Long episodeId, PurchaseType purchaseType) {
+    private EpisodePurchase validateEpisodePurchase(User user, ContentType contentType, Content content, Long episodeId, PurchaseType purchaseType) {
         log.info("Validate episode purchase or rent: userId = {}, contentType = {}, episodeId = {}", user.getId(), contentType, episodeId);
 
         EpisodePurchase episodePurchase
-                = episodePurchaseRepository.findByUser_IdAndContentIdAndEpisodeId(user.getId(), contentId, episodeId).orElse(null);
+                = episodePurchaseRepository.findByUser_IdAndContent_IdAndEpisodeId(user.getId(), content.getId(), episodeId).orElse(null);
 
         if (episodePurchase == null) {
             if (purchaseType == PurchaseType.OWN) {
-                return purchaseEpisode(user, contentId, contentType, episodeId);
+                return purchaseEpisode(user, content, contentType, episodeId);
             } else {
-                return rentEpisode(user, contentId, contentType, episodeId);
+                return rentEpisode(user, content, contentType, episodeId);
             }
         } else {
             if (episodePurchase.getPurchaseType() == PurchaseType.OWN) {
@@ -115,7 +116,7 @@ public class EpisodePurchaseService {
                         episodePurchase.upgradeToPurchase();
                     } else {
                         episodePurchase.extendRental(LocalDateTime.now().plusDays(3));
-                        actionLogService.createActionLog(user.getId(), contentId, contentType, ActionType.RENTAL, 0);
+                        actionLogService.createActionLog(user.getId(), content.getId(), contentType, ActionType.RENTAL, 0);
                     }
                 }
             }
@@ -126,32 +127,32 @@ public class EpisodePurchaseService {
 
     }
 
-    private EpisodePurchase purchaseEpisode(User user, Long contentId, ContentType contentType, Long episodeId) {
+    private EpisodePurchase purchaseEpisode(User user, Content content, ContentType contentType, Long episodeId) {
         EpisodePurchase episodePurchase = EpisodePurchase.builder()
                 .user(user)
-                .contentId(contentId)
+                .content(content)
                 .episodeId(episodeId)
                 .purchaseType(PurchaseType.OWN)
                 .build();
 
-        actionLogService.createActionLog(user.getId(), contentId, contentType, ActionType.PURCHASE, 0);
+        actionLogService.createActionLog(user.getId(), content.getId(), contentType, ActionType.PURCHASE, 0);
 
         return episodePurchaseRepository.save(episodePurchase);
 
     }
 
-    private EpisodePurchase rentEpisode(User user, Long contentId, ContentType contentType, Long episodeId) {
+    private EpisodePurchase rentEpisode(User user, Content content, ContentType contentType, Long episodeId) {
         LocalDateTime expiredAt = LocalDateTime.now().plusDays(3);
 
         EpisodePurchase episodePurchase = EpisodePurchase.builder()
                 .user(user)
-                .contentId(contentId)
+                .content(content)
                 .episodeId(episodeId)
                 .purchaseType(PurchaseType.RENT)
                 .expiredAt(expiredAt)
                 .build();
 
-        actionLogService.createActionLog(user.getId(), contentId, contentType, ActionType.RENTAL, 0);
+        actionLogService.createActionLog(user.getId(), content.getId(), contentType, ActionType.RENTAL, 0);
 
         return episodePurchaseRepository.save(episodePurchase);
     }

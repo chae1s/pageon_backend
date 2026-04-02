@@ -17,32 +17,5 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CreatorAccountController {
 
-    private final CreatorAccountService creatorAccountService;
 
-    @PostMapping("/bank-account")
-    public ResponseEntity<Void> registerBankAccount(
-            @AuthenticationPrincipal PrincipalUser principalUser,
-            @RequestBody BankAccountVerification request
-    ) {
-
-        creatorAccountService.registerBankAccount(principalUser.getId(), request);
-
-        return ResponseEntity.ok().build();
-
-    }
-
-    @GetMapping("/bank-account")
-    public ResponseEntity<BankAccount> getBankAccount(@AuthenticationPrincipal PrincipalUser principalUser) {
-
-        BankAccount bankAccount = creatorAccountService.getBankAccount(principalUser.getId());
-
-        return ResponseEntity.ok(bankAccount);
-    }
-
-    @GetMapping("/bank-account/history")
-    public ResponseEntity<List<BankAccountList>> getMyBankAccountHistory(@AuthenticationPrincipal PrincipalUser principalUser) {
-        List<BankAccountList> bankAccountList = creatorAccountService.getMyBankAccountHistory(principalUser.getId());
-
-        return ResponseEntity.ok(bankAccountList);
-    }
 }

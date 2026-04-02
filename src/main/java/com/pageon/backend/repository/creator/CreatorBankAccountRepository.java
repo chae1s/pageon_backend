@@ -17,4 +17,7 @@ public interface CreatorBankAccountRepository extends JpaRepository<CreatorBankA
             "c.id, c.bankCode, c.createdAt, c.deletedAt) FROM CreatorBankAccount c " +
             "WHERE c.creator.id = :creatorId")
     List<BankAccountList> findAllByCreatorId(Long creatorId);
+
+
+    List<CreatorBankAccount> findAllByCreatorIdInAndIsValidTrue(List<Long> creatorIds);
 }
