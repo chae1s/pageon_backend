@@ -1,5 +1,6 @@
 package com.pageon.backend.service;
 
+import com.pageon.backend.common.annotation.ExecutionTimer;
 import com.pageon.backend.common.enums.EpisodeStatus;
 import com.pageon.backend.common.utils.PageableUtil;
 import com.pageon.backend.dto.request.episode.WebnovelEpisodeCreate;
@@ -68,6 +69,7 @@ public class CreatorEpisodeService {
     }
 
     @Transactional
+    @ExecutionTimer
     public Long createWebtoonEpisode(Long userId, Long contentId, WebtoonEpisodeCreate request, MultipartFile[] files) {
         if (files == null || files.length == 0) {
             throw new CustomException(ErrorCode.FILE_EMPTY);

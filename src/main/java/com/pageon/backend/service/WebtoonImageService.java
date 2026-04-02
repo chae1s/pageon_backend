@@ -1,5 +1,6 @@
 package com.pageon.backend.service;
 
+import com.pageon.backend.common.annotation.ExecutionTimer;
 import com.pageon.backend.dto.request.episode.WebtoonEpisodeUpdate;
 import com.pageon.backend.dto.response.episode.EpisodeImage;
 import com.pageon.backend.entity.WebtoonEpisode;
@@ -35,7 +36,7 @@ public class WebtoonImageService {
 
         return images;
     }
-
+    @ExecutionTimer
     public void registerWebtoonImage(Long contentId, WebtoonEpisode webtoonEpisode, MultipartFile[] files) {
 
         String s3Prefix = String.format("webtoons/%d/episode/%d", contentId, webtoonEpisode.getEpisodeNum());
