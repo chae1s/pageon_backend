@@ -28,7 +28,7 @@ public class UserBehaviorSimulator {
     private final ContentInfoLoader contentInfoLoader;
 
 
-//    @Scheduled(fixedDelay = 1000)
+    //@Scheduled(fixedDelay = 100)
     public void simulateRandomActivity() {
 
         Long userId = random.nextLong(10000) + 1;

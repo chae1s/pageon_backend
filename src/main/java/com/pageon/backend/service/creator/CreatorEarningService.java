@@ -7,12 +7,14 @@ import com.pageon.backend.entity.PointTransaction;
 import com.pageon.backend.repository.creator.CreatorEarningRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
 public class CreatorEarningService {
-    private CreatorEarningRepository creatorEarningRepository;
+    private final CreatorEarningRepository creatorEarningRepository;
 
+    @Transactional
     public void registerCreatorEarning(Content content, PointTransaction pointTransaction) {
 
         CreatorEarning creatorEarning = CreatorEarning.builder()

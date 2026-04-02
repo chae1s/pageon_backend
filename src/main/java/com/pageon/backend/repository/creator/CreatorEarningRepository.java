@@ -4,6 +4,7 @@ import com.pageon.backend.dto.record.SettlementTarget;
 import com.pageon.backend.dto.response.creator.settlement.DailyRevenue;
 import com.pageon.backend.entity.CreatorEarning;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -26,6 +27,17 @@ public interface CreatorEarningRepository extends JpaRepository<CreatorEarning, 
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate
     );
+
+    @Modifying(clearAutomatically = true)
+    @Query("""
+    UPDATE CreatorEarning ce SET ce.earningStatus = 'SETTLED' 
+    WHERE ce.creator.id IN :creatorIds 
+        AND ce.earningStatus = 'EARNED' 
+        AND ce.createdAt BETWEEN :startDate AND :endDate
+    """)
+    void bulkUpdateStatusToSettled(@Param("creatorIds")List<Long> creatorIds,
+                                   @Param("startDate") LocalDateTime startDate,
+                                   @Param("endDate") LocalDateTime endDate);
 
     @Query("SELECT COALESCE(SUM(ce.point), 0) FROM CreatorEarning ce " +
             "WHERE ce.creator.id = :creatorId " +

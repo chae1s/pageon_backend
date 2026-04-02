@@ -106,8 +106,8 @@ public abstract class Content extends BaseTimeEntity {
         this.totalAverageRating = this.totalAverageRating + ((double) (newScore - oldScore) / this.totalRatingCount);
     }
 
-    public void updateEpisode() {
-        this.episodeUpdatedAt = LocalDateTime.now();
+    public void updateEpisode(LocalDate publishedAt) {
+        this.episodeUpdatedAt = publishedAt.atStartOfDay();
         this.episodeCount++;
     }
 

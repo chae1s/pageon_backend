@@ -75,4 +75,8 @@ public abstract class EpisodeBase extends BaseTimeEntity {
         this.setDeletedAt(LocalDateTime.now());
     }
 
+    public void publish() {
+        this.episodeStatus = EpisodeStatus.PUBLISHED;
+    }
+
 }

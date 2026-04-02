@@ -42,6 +42,7 @@ public class CreatorSettlementService {
     private final CreatorBankAccountRepository creatorBankAccountRepository;
 
     @ExecutionTimer
+    @Transactional
     public void processSettlement(LocalDateTime scheduledAt) {
         LocalDateTime periodStart = scheduledAt.minusMonths(1);
         LocalDateTime periodEnd = scheduledAt.minusDays(1).withHour(23).withMinute(59).withSecond(59);
@@ -75,6 +76,9 @@ public class CreatorSettlementService {
 
         settlementRepository.saveAll(settlements);
 
+        if (!creatorIds.isEmpty()) {
+            creatorEarningRepository.bulkUpdateStatusToSettled(creatorIds, periodStart, periodEnd);
+        }
     }
 
     private Settlement registerSettlement(

@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -67,4 +68,8 @@ public interface WebnovelEpisodeRepository extends JpaRepository<WebnovelEpisode
 
     @EntityGraph(attributePaths = {"webnovel.creator"})
     Optional<WebnovelEpisode> findById(Long episodeId);
+
+    @Query("SELECT we FROM WebnovelEpisode we " +
+            "WHERE we.publishedAt = :publishedAt AND we.episodeStatus = 'SCHEDULED'")
+    List<WebnovelEpisode> findAllByPublishedAt(LocalDate publishedAt);
 }
