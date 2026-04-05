@@ -53,12 +53,12 @@ public class SecurityConfig {
                 )
                 .formLogin(FormLoginConfigurer::disable)
                 .oauth2Login(oauth2 -> oauth2
-                        .loginPage("http://localhost:3000")
+                        .loginPage("https://pageon.store")
                         .userInfoEndpoint(
                                 userInfoEndpointConfig -> userInfoEndpointConfig.userService(customOauth2UserService)
 
                         )
-                        .failureHandler(((request, response, exception) -> response.sendRedirect("http://localhost:3000/login?error=oauth2")))
+                        .failureHandler(((request, response, exception) -> response.sendRedirect("https://pageon.store/login?error=oauth2")))
                         .successHandler(oAuth2SuccessHandler)
                         .authorizationEndpoint(authorization -> authorization.baseUri("/oauth2/authorization"))
                         .permitAll()
