@@ -22,7 +22,7 @@ jobs:
       - name: application-prod.yml 생성
         run: |
           mkdir -p src/main/resources
-          cat > src/main/resources/application-prod.yml << 'EOF'
+          cat > src/main/resources/application-prod.yml << EOF
           spring:
             datasource:
               url: ${{ secrets.DB_URL }}
