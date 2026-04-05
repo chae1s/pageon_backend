@@ -251,4 +251,11 @@ public class WebnovelEpisodeProvider implements EpisodeProvider {
     public Page<EpisodeList> getEpisodesByEpisodeStatus(Long contentId, EpisodeStatus episodeStatus, Pageable pageable) {
         return webnovelEpisodeRepository.findByWebnovel_IdAndEpisodeStatus(contentId, episodeStatus, pageable);
     }
+
+    @Override
+    public void deleteAllEpisode(Long contentId) {
+        LocalDateTime deletedAt = LocalDateTime.now();
+
+        webnovelEpisodeRepository.bulkUpdateDeletedAt(contentId, deletedAt);
+    }
 }
