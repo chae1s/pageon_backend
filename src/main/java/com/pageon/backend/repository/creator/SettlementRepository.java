@@ -1,14 +1,17 @@
 package com.pageon.backend.repository.creator;
 
+import com.pageon.backend.common.enums.SettlementStatus;
 import com.pageon.backend.dto.record.PayoutTarget;
 import com.pageon.backend.dto.response.creator.settlement.RevenueDetail;
 import com.pageon.backend.dto.response.creator.settlement.SettlementSummary;
 import com.pageon.backend.entity.Settlement;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.security.core.parameters.P;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -42,5 +45,28 @@ public interface SettlementRepository extends JpaRepository<Settlement, Long> {
             "s.creator.id, s) FROM Settlement s " +
             "WHERE s.settlementStatus = 'PENDING' " +
             "AND s.payoutDate = :payoutDate")
-    List<PayoutTarget> findPayoutTarget(@Param("payoutDate")LocalDateTime payoutDate);
+    List<PayoutTarget> findAllPayoutTargets(@Param("payoutDate")LocalDateTime payoutDate);
+
+    @Query("SELECT s FROM Settlement s " +
+            "JOIN FETCH s.creator c " +
+            "JOIN FETCH c.creatorBankAccounts " +
+            "WHERE s.id = :settlementId")
+    Optional<Settlement> findPayoutTarget(@Param("settlementId")Long settlementId);
+
+    @Query("SELECT s FROM Settlement s " +
+            "JOIN FETCH s.creator c " +
+            "JOIN FETCH c.user u " +
+            "WHERE s.scheduledAt = :scheduledAt")
+    Page<Settlement> findAllStatusByMonth(LocalDateTime scheduledAt, Pageable pageable);
+
+
+    @Query("SELECT s FROM Settlement s " +
+            "JOIN FETCH s.creator c " +
+            "JOIN FETCH c.user u " +
+            "WHERE s.settlementStatus = :settlementStatus " +
+            "AND s.scheduledAt = :scheduledAt")
+    Page<Settlement> findSettlementByStatusAndScheduledAt(SettlementStatus settlementStatus, LocalDateTime scheduledAt, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"creator.creatorBankAccounts"})
+    Optional<Settlement> findById(Long settledMon);
 }

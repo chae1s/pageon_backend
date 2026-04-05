@@ -40,5 +40,15 @@ public class ContentDeletionRequest {
         this.processedAt = LocalDateTime.now();
     }
 
+    public void approveDeletion() {
+        this.deleteStatus = DeleteStatus.APPROVED;
+        this.processedAt = LocalDateTime.now();
+    }
+
+    public void rejectDeletion() {
+        this.deleteStatus = DeleteStatus.REJECTED;
+        this.processedAt = LocalDateTime.now();
+    }
+
 
 }

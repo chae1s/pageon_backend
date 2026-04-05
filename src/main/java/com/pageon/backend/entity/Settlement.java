@@ -44,9 +44,9 @@ public class Settlement extends BaseTimeEntity {
     private LocalDateTime payoutDate;
     private LocalDateTime settledAt;
 
-    public void complete(LocalDateTime payoutDate) {
+    public void complete(LocalDateTime settledAt) {
         this.settlementStatus = SettlementStatus.DONE;
-        this.settledAt = payoutDate;
+        this.settledAt = settledAt;
     }
 
     public void fail(String reason) {

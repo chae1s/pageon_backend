@@ -42,6 +42,10 @@ public class Creator {
     @OneToMany(mappedBy = "creator")
     private List<Webnovel> webnovels = new ArrayList<>();
 
+    @Builder.Default
+    @OneToMany(mappedBy = "creator")
+    private List<CreatorBankAccount> creatorBankAccounts = new ArrayList<>();
+
     public Creator(String penName, User users) {
         this.penName = penName;
         this.user = users;

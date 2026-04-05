@@ -253,4 +253,11 @@ public class WebtoonEpisodeProvider implements EpisodeProvider {
     public Page<EpisodeList> getEpisodesByEpisodeStatus(Long contentId, EpisodeStatus episodeStatus, Pageable pageable) {
         return webtoonEpisodeRepository.findByWebtoon_IdAndEpisodeStatus(contentId, episodeStatus, pageable);
     }
+
+    @Override
+    public void deleteAllEpisode(Long contentId) {
+        LocalDateTime deletedAt = LocalDateTime.now();
+
+        webtoonEpisodeRepository.bulkUpdateDeletedAt(contentId, deletedAt);
+    }
 }

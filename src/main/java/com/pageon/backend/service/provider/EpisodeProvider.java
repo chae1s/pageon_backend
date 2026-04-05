@@ -48,4 +48,6 @@ public interface EpisodeProvider {
     Page<EpisodeList> getAllEpisodesByContent(Long contentId, Pageable pageable);
 
     Page<EpisodeList> getEpisodesByEpisodeStatus(Long contentId, EpisodeStatus episodeStatus, Pageable pageable);
+
+    void deleteAllEpisode(Long contentId);
 }

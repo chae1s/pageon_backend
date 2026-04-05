@@ -131,4 +131,8 @@ public abstract class Content extends BaseTimeEntity {
     public void cancelDeletion() {
         this.workStatus = WorkStatus.PUBLISHED;
     }
+
+    public void rejectDeletion() {
+        this.workStatus = WorkStatus.PUBLISHED;
+    }
 }

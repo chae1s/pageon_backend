@@ -111,6 +111,8 @@ public enum ErrorCode {
     DECRYPTION_FAILED("계좌번호 복호화에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
     BANK_ACCOUNT_NOT_FOUND("계좌 정보를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
     REVENUE_NOT_FOUND("수익 정보를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    SETTLEMENT_NOT_FOUND("정산 기록을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    INVALID_SETTLEMENT_OWNER("해당 정산 기록에 대한 권한이 없습니다.", HttpStatus.FORBIDDEN),
     ;
 
 
