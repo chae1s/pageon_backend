@@ -37,15 +37,15 @@ jobs:
                     kakao:
                       client-id: ${{ secrets.KAKAO_CLIENT_ID }}
                       client-secret: ${{ secrets.KAKAO_CLIENT_SECRET }}
-                      redirect-uri: http://15.165.48.236/login/oauth2/code/kakao
+                      redirect-uri: http://${{ secrets.EC2_HOST }}/login/oauth2/code/kakao
                     naver:
                       client-id: ${{ secrets.NAVER_CLIENT_ID }}
                       client-secret: ${{ secrets.NAVER_CLIENT_SECRET }}
-                      redirect-uri: http://15.165.48.236/login/oauth2/code/naver
+                      redirect-uri: http://${{ secrets.EC2_HOST }}/login/oauth2/code/naver
                     google:
                       client-id: ${{ secrets.GOOGLE_CLIENT_ID }}
                       client-secret: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-                      redirect-uri: http://15.165.48.236/login/oauth2/code/google
+                      redirect-uri: http://${{ secrets.EC2_HOST }}/login/oauth2/code/google
             mail:
               username: gopageon@gmail.com
               password: ${{ secrets.MAIL_PASSWORD }}
@@ -123,7 +123,7 @@ jobs:
       - name: EC2에 파일 전송
         uses: appleboy/scp-action@master
         with:
-          host: 15.165.48.236
+          host: ${{ secrets.EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           source: "pageon-backend.tar.gz,docker-compose.prod.yml,prometheus"
@@ -132,12 +132,12 @@ jobs:
       - name: EC2에서 배포
         uses: appleboy/ssh-action@master
         with:
-          host: 15.165.48.236
+          host: ${{ secrets.EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             cd /home/ubuntu/app
             docker load < pageon-backend.tar.gz
-            docker compose -f docker-compose.prod.yml down
-            docker compose -f docker-compose.prod.yml up -d
+            /usr/local/bin/docker-compose -f docker-compose.prod.yml down
+            /usr/local/bin/docker-compose -f docker-compose.prod.yml up -d
             docker image prune -f
