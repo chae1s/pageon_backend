@@ -20,4 +20,6 @@ public interface CreatorBankAccountRepository extends JpaRepository<CreatorBankA
 
 
     List<CreatorBankAccount> findAllByCreatorIdInAndIsValidTrue(List<Long> creatorIds);
+
+
 }

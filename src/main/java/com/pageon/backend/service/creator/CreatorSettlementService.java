@@ -127,7 +127,7 @@ public class CreatorSettlementService {
 
     @Transactional
     public void payoutSettlement(LocalDateTime payoutDate) {
-        List<PayoutTarget> targets = settlementRepository.findPayoutTarget(payoutDate);
+        List<PayoutTarget> targets = settlementRepository.findAllPayoutTargets(payoutDate);
 
         List<Long> creatorIds = targets.stream()
                 .map(PayoutTarget::creatorId)
