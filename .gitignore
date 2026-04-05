@@ -174,7 +174,6 @@ $RECYCLE.BIN/
 
 application-dev.yml
 application-prod.yml
-**/resources/data/*.csv
 **/resources/keys/*.pem
 
 
