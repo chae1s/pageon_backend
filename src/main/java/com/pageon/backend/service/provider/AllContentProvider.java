@@ -3,13 +3,16 @@ package com.pageon.backend.service.provider;
 import com.pageon.backend.common.enums.SerialDay;
 import com.pageon.backend.dto.response.EpisodeResponse;
 import com.pageon.backend.entity.Content;
+import com.pageon.backend.entity.ContentRanking;
 import com.pageon.backend.entity.Interest;
 import com.pageon.backend.entity.ReadingHistory;
 import com.pageon.backend.repository.ContentRepository;
 import com.pageon.backend.repository.InterestRepository;
+import com.pageon.backend.repository.RankingRepository;
 import com.pageon.backend.repository.ReadingHistoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
@@ -23,6 +26,7 @@ public class AllContentProvider implements ContentProvider {
     private final ContentRepository contentRepository;
     private final InterestRepository interestRepository;
     private final ReadingHistoryRepository readingHistoryRepository;
+    private final RankingRepository rankingRepository;
 
     @Override
     public boolean supports(String contentType) {
@@ -72,6 +76,11 @@ public class AllContentProvider implements ContentProvider {
     @Override
     public Page<ReadingHistory> findByReadingHistory(Long userId, Pageable pageable) {
         return readingHistoryRepository.findAllReadingHistories(userId, pageable);
+    }
+
+    @Override
+    public List<ContentRanking> findAllHourlyRankings(LocalDateTime rankingHour) {
+        return rankingRepository.findAllHourlyRankings(rankingHour, PageRequest.of(0, 18));
     }
 
 }

@@ -49,6 +49,7 @@ public class RedisCacheConfig {
         cacheConfigurations.put("contents:masterpiece", redisCacheConfig);
         cacheConfigurations.put("contents:keyword", redisCacheConfig);
         cacheConfigurations.put("contents:recent", redisCacheConfig.entryTtl(Duration.ofDays(2)));
+        cacheConfigurations.put("contents:hourly", redisCacheConfig.entryTtl(Duration.ofHours(2)));
 
         return RedisCacheManager.builder(redisConnectionFactory)
                 .cacheDefaults(redisCacheConfig)

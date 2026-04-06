@@ -17,4 +17,8 @@ public enum ActionType {
         this.score = score;
     }
 
+    public Integer getScore() {
+        return score;
+    }
+
 }

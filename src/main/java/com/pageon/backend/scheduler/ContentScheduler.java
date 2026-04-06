@@ -5,6 +5,7 @@ import com.pageon.backend.common.enums.SerialDay;
 import com.pageon.backend.common.utils.PageableUtil;
 import com.pageon.backend.service.ContentCacheService;
 import com.pageon.backend.service.CreatorEpisodeService;
+import com.pageon.backend.service.RankingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -18,6 +19,7 @@ public class ContentScheduler {
 
     private final ContentCacheService contentCacheService;
     private final CreatorEpisodeService creatorEpisodeService;
+    private final RankingService rankingService;
 
     @ExecutionTimer
     @Scheduled(cron = "0 50 23 * * 0")
@@ -76,6 +78,12 @@ public class ContentScheduler {
         creatorEpisodeService.publishScheduledWebnovelEpisodes(tomorrow);
         creatorEpisodeService.publishScheduledWebtoonEpisodes(tomorrow);
 
+    }
+
+    @ExecutionTimer
+    @Scheduled(cron = "0 0 * * * *")
+    public void runHourlyRanking() {
+        rankingService.updateHourlyRanking();
     }
 
 

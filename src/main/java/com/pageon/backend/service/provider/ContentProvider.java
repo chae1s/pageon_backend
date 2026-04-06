@@ -3,6 +3,7 @@ package com.pageon.backend.service.provider;
 import com.pageon.backend.common.enums.SerialDay;
 import com.pageon.backend.dto.response.EpisodeResponse;
 import com.pageon.backend.entity.Content;
+import com.pageon.backend.entity.ContentRanking;
 import com.pageon.backend.entity.Interest;
 import com.pageon.backend.entity.ReadingHistory;
 import org.springframework.data.domain.Page;
@@ -29,6 +30,7 @@ public interface ContentProvider {
     Page<Interest> findByInterest(Long userId, Pageable pageable);
     Page<ReadingHistory> findByReadingHistory(Long userId, Pageable pageable);
 
+    List<ContentRanking> findAllHourlyRankings(LocalDateTime rankingHour);
 
 
 }

@@ -8,6 +8,7 @@ import com.pageon.backend.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
@@ -25,6 +26,7 @@ public class WebnovelProvider implements ContentProvider{
     private final WebnovelEpisodeRepository webnovelEpisodeRepository;
     private final EpisodePurchaseRepository episodePurchaseRepository;
     private final ReadingHistoryRepository readingHistoryRepository;
+    private final RankingRepository rankingRepository;
 
     @Override
     public boolean supports(String contentType) {
@@ -87,6 +89,11 @@ public class WebnovelProvider implements ContentProvider{
     @Override
     public Page<ReadingHistory> findByReadingHistory(Long userId, Pageable pageable) {
         return readingHistoryRepository.findWebnovelReadingHistories(userId, pageable);
+    }
+
+    @Override
+    public List<ContentRanking> findAllHourlyRankings(LocalDateTime rankingHour) {
+        return rankingRepository.findAllWebnovelRankings(rankingHour, PageRequest.of(0, 9));
     }
 
 }

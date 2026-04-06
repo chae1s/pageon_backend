@@ -15,6 +15,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 public interface ContentRepository extends JpaRepository<Content, Long> {
 
@@ -81,4 +82,6 @@ public interface ContentRepository extends JpaRepository<Content, Long> {
             "FROM Content c " +
             "WHERE c.creator.id = :creatorId AND c.status = 'ONGOING' AND c.workStatus != 'DELETED' AND c.workStatus != 'DELETING'")
     List<ContentTab> findAllByStatusOngoing(@Param("creatorId") Long creatorId);
+
+    List<Content> findAllByIdIn(Set<Long> contentIds);
 }

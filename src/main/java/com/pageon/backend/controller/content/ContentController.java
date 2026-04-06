@@ -15,6 +15,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Slf4j
@@ -139,7 +140,8 @@ public class ContentController {
     @GetMapping("/hourly-ranking")
     public ResponseEntity<List<ContentResponse.Simple>> getHourlyRank(@PathVariable String contentType) {
         log.info("Getting hourly ranking for content type {}", contentType);
-        List<ContentResponse.Simple> contents = contentService.getBestCompletedList(contentType);
+        LocalDateTime rankingHour = LocalDateTime.now().withMinute(0).withSecond(0).withNano(0);
+        List<ContentResponse.Simple> contents = contentService.getHourlyRankingList(contentType, rankingHour);
         return ResponseEntity.ok(contents);
     }
 }
