@@ -1,5 +1,6 @@
 package com.pageon.backend.service;
 
+import com.pageon.backend.dto.payload.ActionLogEvent;
 import com.pageon.backend.entity.base.EpisodeBase;
 import com.pageon.backend.common.enums.ActionType;
 import com.pageon.backend.common.enums.ContentType;
@@ -8,6 +9,8 @@ import com.pageon.backend.entity.*;
 import com.pageon.backend.exception.CustomException;
 import com.pageon.backend.exception.ErrorCode;
 import com.pageon.backend.repository.*;
+import com.pageon.backend.service.handler.EpisodeActionHandler;
+import com.pageon.backend.service.kafka.ActionLogProducer;
 import com.pageon.backend.service.provider.EpisodeProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,8 +30,8 @@ public class EpisodePurchaseService {
     private final UserRepository userRepository;
     private final EpisodePurchaseRepository episodePurchaseRepository;
     private final PointTransactionService pointTransactionService;
-    private final ActionLogService actionLogService;
     private final IdempotentService idempotentService;
+    private final EpisodeActionHandler episodeActionHandler;
 
 
     public record EpisodeInfo(Content content, Integer episodePrice, EpisodeBase episodeBase) {}
@@ -116,7 +119,7 @@ public class EpisodePurchaseService {
                         episodePurchase.upgradeToPurchase();
                     } else {
                         episodePurchase.extendRental(LocalDateTime.now().plusDays(3));
-                        actionLogService.createActionLog(user.getId(), content.getId(), contentType, ActionType.RENTAL, 0);
+                        episodeActionHandler.handlePurchaseEpisode(user.getId(), content.getId(), contentType, ActionType.RENTAL);
                     }
                 }
             }
@@ -135,7 +138,7 @@ public class EpisodePurchaseService {
                 .purchaseType(PurchaseType.OWN)
                 .build();
 
-        actionLogService.createActionLog(user.getId(), content.getId(), contentType, ActionType.PURCHASE, 0);
+        episodeActionHandler.handlePurchaseEpisode(user.getId(), content.getId(), contentType, ActionType.PURCHASE);
 
         return episodePurchaseRepository.save(episodePurchase);
 
@@ -152,7 +155,7 @@ public class EpisodePurchaseService {
                 .expiredAt(expiredAt)
                 .build();
 
-        actionLogService.createActionLog(user.getId(), content.getId(), contentType, ActionType.RENTAL, 0);
+        episodeActionHandler.handlePurchaseEpisode(user.getId(), content.getId(), contentType, ActionType.RENTAL);
 
         return episodePurchaseRepository.save(episodePurchase);
     }
@@ -162,6 +165,17 @@ public class EpisodePurchaseService {
                 .filter(p -> p.supports(contentType))
                 .findFirst()
                 .orElseThrow(() -> new CustomException(ErrorCode.INVALID_CONTENT_TYPE));
+    }
+
+    private ActionLogEvent getActionLogEvent(Long userId, Long contentId, ContentType contentType, ActionType actionType, int ratingScore) {
+        return ActionLogEvent.builder()
+                .userId(userId)
+                .contentId(contentId)
+                .contentType(contentType)
+                .actionType(actionType)
+                .ratingScore(ratingScore)
+                .build();
+
     }
 
 

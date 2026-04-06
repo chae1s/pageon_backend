@@ -1,6 +1,7 @@
 package com.pageon.backend.service;
 
 import com.pageon.backend.common.annotation.ExecutionTimer;
+import com.pageon.backend.common.enums.ContentType;
 import com.pageon.backend.common.enums.SerialDay;
 import com.pageon.backend.common.utils.PageableUtil;
 import com.pageon.backend.dto.response.ContentResponse;
@@ -11,6 +12,7 @@ import com.pageon.backend.exception.CustomException;
 import com.pageon.backend.exception.ErrorCode;
 import com.pageon.backend.repository.*;
 import com.pageon.backend.security.PrincipalUser;
+import com.pageon.backend.service.handler.EpisodeActionHandler;
 import com.pageon.backend.service.provider.ContentProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +38,7 @@ public class ContentService {
     private final KeywordRepository keywordRepository;
     private final UserRepository userRepository;
     private final ReadingHistoryRepository readingHistoryRepository;
+    private final EpisodeActionHandler actionHandler;
 
     @Transactional(readOnly = true)
     public ContentResponse.Detail getContentDetail(PrincipalUser principalUser, String contentType, Long contentId) {
@@ -228,6 +231,19 @@ public class ContentService {
 
     }
 
+    @ExecutionTimer
+    @Transactional(readOnly = true)
+    @Cacheable(value = "contents:hourly", key = "#contentType + ':' + #rankingHour")
+    public List<ContentResponse.Simple> getHourlyRankingList(String contentType, LocalDateTime rankingHour) {
+        ContentProvider provider = getProvider(contentType);
+
+        List<ContentRanking> rankings = provider.findAllHourlyRankings(rankingHour);
+
+        return rankings.stream()
+                .map(ranking -> ContentResponse.Simple.fromEntity(ranking.getContent()))
+                .collect(Collectors.toList());
+    }
+
     @Transactional
     public void toggleInterest(Long userId, Long contentId) {
         log.info("Toggling interest status for User ID: {} and Content ID: {}", userId, contentId);
@@ -253,6 +269,8 @@ public class ContentService {
 
             interestRepository.save(interest);
             content.updateInterestCount(1);
+            actionHandler.handleInterestContent(userId, contentId, ContentType.valueOf(content.getDtype()));
+
             log.info("Successfully ADDED interest for User: {} on Content: {}", userId, contentId);
         }
     }

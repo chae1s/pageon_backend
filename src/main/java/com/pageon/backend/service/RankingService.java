@@ -12,18 +12,21 @@ import com.pageon.backend.exception.ErrorCode;
 import com.pageon.backend.repository.ActionLogRepository;
 import com.pageon.backend.repository.ContentRepository;
 import com.pageon.backend.repository.RankingRepository;
+import com.pageon.backend.service.provider.ContentProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StopWatch;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -32,89 +35,81 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class RankingService {
 
-    private final ActionLogRepository actionLogRepository;
     private final ContentRepository contentRepository;
     private final RankingRepository rankingRepository;
+    private final StringRedisTemplate stringRedisTemplate;
 
     @Transactional
     @ExecutionTimer
     @Scheduled(cron = "0 0 * * * *")
     public void updateHourlyRanking() {
-        StopWatch stopWatch = new StopWatch();
-        stopWatch.start();
-        LocalDateTime now = LocalDateTime.now();
 
-        LocalDateTime rankingHour = now.withMinute(0).withSecond(0).withNano(0);
-        LocalDateTime startTime = now.minusHours(1);
+        LocalDateTime rankingHour = LocalDateTime.now().withMinute(0).withSecond(0).withNano(0);
 
-        List<ActionCountResponse> actionCounts = actionLogRepository.countActionsByTimeRange(startTime, rankingHour);
+        String timeSuffix = rankingHour.format((DateTimeFormatter.ofPattern("yyyyMMddHH")));
 
-        Map<ContentType, List<ActionCountResponse>> actionCountsMap = actionCounts.stream()
-                .collect(Collectors.groupingBy(ActionCountResponse::getContentType));
+        String webnovelKey = "ranking:hourly:" + timeSuffix + ":WEBNOVEL";
+        String webtoonKey = "ranking:hourly:" + timeSuffix + ":WEBTOON";
+
+        Set<ZSetOperations.TypedTuple<String>> webnovelScores =
+                stringRedisTemplate.opsForZSet().reverseRangeWithScores(webnovelKey, 0, 19);
+
+        Set<ZSetOperations.TypedTuple<String>> webtoonScores =
+                stringRedisTemplate.opsForZSet().reverseRangeWithScores(webtoonKey, 0, 19);
+
+
+        saveHourlyRanking(webnovelScores, rankingHour, ContentType.WEBNOVEL);
+        saveHourlyRanking(webtoonScores, rankingHour, ContentType.WEBTOON);
+
+
+    }
+
+    private void saveHourlyRanking(Set<ZSetOperations.TypedTuple<String>> scores, LocalDateTime rankingHour, ContentType contentType) {
+        if (scores == null || scores.isEmpty()) {
+            return;
+        }
+
+        Map<Long, Integer> scoreMap = scores.stream()
+                .filter(tuple -> tuple.getValue() != null)
+                .filter(tuple -> tuple.getScore() != null)
+                .collect(Collectors.toMap(
+                        tuple -> Long.valueOf(tuple.getValue()),
+                        tuple -> tuple.getScore().intValue(),
+                        (existing, replacement) -> existing
+                ));
+
+        Set<Long> contentIds = scoreMap.keySet();
+        List<Content> contents = contentRepository.findAllByIdIn(contentIds);
 
         List<ContentRanking> rankings = new ArrayList<>();
+        for (int i = 0; i < contents.size(); i++) {
+            rankings.add(
+                    ContentRanking.builder()
+                            .content(contents.get(i))
+                            .contentType(contentType)
+                            .rankNo(i + 1)
+                            .rankingHour(rankingHour)
+                            .totalScore(Long.valueOf(scoreMap.get(contents.get(i).getId())))
+                            .build()
+            );
 
-        rankings.addAll(createRankingList(actionCountsMap.get(ContentType.WEBNOVEL), ContentType.WEBNOVEL, rankingHour));
-        rankings.addAll(createRankingList(actionCountsMap.get(ContentType.WEBTOON), ContentType.WEBTOON, rankingHour));
+        }
 
         rankingRepository.saveAll(rankings);
 
-        stopWatch.stop();
-        log.info("실시간 랭킹 콘텐츠 저장 소요 시간: {}ms", stopWatch.getTotalTimeMillis());
+        String type = (contentType == ContentType.WEBNOVEL) ? "webnovels" : "webtoons";
 
+        getHourlyRankingList(contents, type, rankingHour);
     }
 
-    private List<ContentRanking> createRankingList(List<ActionCountResponse> actionCounts, ContentType contentType, LocalDateTime rankingHour) {
-        Map<Long, Long> scoreMap = new HashMap<>();
-        for (ActionCountResponse actionCountResponse : actionCounts) {
-            Long points = actionCountResponse.getTotalCount() * actionCountResponse.getActionType().getScore();
-            scoreMap.merge(actionCountResponse.getContentId(), points, Long::sum);
-        }
 
-        List<Long> topIds = scoreMap.entrySet().stream()
-                .sorted(Map.Entry.<Long, Long>comparingByValue().reversed())
+    @CachePut(value = "contents:hourly", key = "#contentType + ':' + #rankingHour")
+    public List<ContentResponse.Simple> getHourlyRankingList(List<Content> contents, String contentType, LocalDateTime rankingHour) {
+
+        return contents.stream()
                 .limit(9)
-                .map(Map.Entry::getKey).toList();
-
-        List<Content> contents = contentRepository.findAllById(topIds);
-        Map<Long, Content> contentMap = contents.stream()
-                .collect(Collectors.toMap(Content::getId, Function.identity()));
-
-        List<ContentRanking> contentRankings = new ArrayList<>();
-        for (int i = 0; i < topIds.size(); i++) {
-            Long contentId = topIds.get(i);
-            Content content = contentMap.get(contentId);
-
-            if (content != null) {
-                contentRankings.add(ContentRanking.builder()
-                        .content(content)
-                        .contentType(contentType)
-                        .rankNo(i + 1)
-                        .totalScore(scoreMap.get(contentId))
-                        .rankingHour(rankingHour)
-                        .build());
-            }
-        }
-
-        return contentRankings;
+                .map(ContentResponse.Simple::fromEntity)
+                .collect(Collectors.toList());
     }
 
-    @Transactional(readOnly = true)
-    public List<ContentResponse.Simple> getHourlyRankingContents(String contentType) {
-
-        StopWatch stopWatch = new StopWatch();
-        stopWatch.start();
-        LocalDateTime rankingHour = LocalDateTime.now().withMinute(0).withSecond(0).withNano(0);
-        List<ContentRanking> contentRankings;
-        switch (contentType) {
-            case "all" -> contentRankings = rankingRepository.findAllRankings(rankingHour);
-            case "webnovels" -> contentRankings = rankingRepository.findWebnovelRankings(rankingHour);
-            case "webtoons" -> contentRankings = rankingRepository.findWebtoonRankings(rankingHour);
-            default -> throw new CustomException(ErrorCode.INVALID_CONTENT_TYPE);
-        }
-
-        stopWatch.stop();
-        log.info("실시간 랭킹 콘텐츠 조회 소요 시간: {}ms", stopWatch.getTotalTimeMillis());
-        return contentRankings.stream().map(contentRanking -> ContentResponse.Simple.fromEntity(contentRanking.getContent())).toList();
-    }
 }
