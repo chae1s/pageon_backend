@@ -136,8 +136,10 @@ public class UserService {
             throw new CustomException(ErrorCode.TOKEN_GENERATION_FAILED);
         }
 
-        TokenInfo tokenInfo = new TokenInfo().updateTokenInfo(principalUser.getId(), principalUser.getUsername());
-        saveRefreshTokenInRedis(tokenInfo, refreshToken);
+        TokenInfo tokenInfo = new TokenInfo().updateTokenInfo(principalUser.getId(), principalUser.getUsername(), refreshToken);
+        String redisKey = "user:auth:" + principalUser.getId();
+
+        saveRefreshTokenInRedis(redisKey, tokenInfo);
 
         jwtProvider.sendTokens(response, accessToken, refreshToken);
 
@@ -145,9 +147,9 @@ public class UserService {
         return accessToken;
     }
 
-    private void saveRefreshTokenInRedis(TokenInfo tokenInfo, String refreshToken) {
+    private void saveRefreshTokenInRedis(String redisKey, TokenInfo tokenInfo) {
         try {
-            redisTemplate.opsForValue().set(refreshToken, tokenInfo, Duration.ofDays(180));
+            redisTemplate.opsForValue().set(redisKey, tokenInfo, Duration.ofDays(180));
         } catch (Exception e) {
             throw new CustomException(ErrorCode.REDIS_CONNECTION_FAILED);
         }
@@ -158,7 +160,9 @@ public class UserService {
                 () -> new CustomException(ErrorCode.USER_NOT_FOUND)
         );
 
-        deleteToken(getRefreshToken(request), user);
+        String redisKey = "user:auth:" + principalUser.getId();
+
+        deleteToken(redisKey, getRefreshToken(request));
 
         Cookie cookie = new Cookie("refreshToken", null);
         cookie.setMaxAge(0);
@@ -178,12 +182,12 @@ public class UserService {
         throw new CustomException(ErrorCode.REFRESH_TOKEN_NOT_FOUND);
     }
 
-    private void deleteToken(String refreshToken, User user) {
+    private void deleteToken(String redisKey, String refreshToken) {
 
-        TokenInfo tokenInfo = (TokenInfo) redisTemplate.opsForValue().get(refreshToken);
+        TokenInfo tokenInfo = (TokenInfo) redisTemplate.opsForValue().get(redisKey);
         if (tokenInfo == null) return;
 
-        if (!tokenInfo.getUserId().equals(user.getId())) {
+        if (!tokenInfo.getRefreshToken().equals(refreshToken)) {
             throw new CustomException(ErrorCode.INVALID_TOKEN);
         }
 
@@ -347,7 +351,8 @@ public class UserService {
         user.delete();
 
         // 로그인 시 받은 refresh token 삭제
-        deleteToken(getRefreshToken(request), user);
+        String tokenInfoRedisKey = "user:auth:" + user.getId();
+        deleteToken(tokenInfoRedisKey, getRefreshToken(request));
         return Map.of(
                 "isDeleted", true,
                 "message", message

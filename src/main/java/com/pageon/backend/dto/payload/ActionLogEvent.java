@@ -8,6 +8,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -19,6 +21,7 @@ public class ActionLogEvent {
     private ContentType contentType;
     private ActionType actionType;
     private Integer ratingScore;
+    private LocalDateTime actionTime;
 
     public ContentActionLog toEntity() {
         return ContentActionLog .builder()
@@ -27,6 +30,7 @@ public class ActionLogEvent {
                 .contentType(this.contentType)
                 .actionType(this.actionType)
                 .ratingScore(this.ratingScore)
+                .actionTime(this.actionTime)
                 .build();
     }
 }

@@ -3,6 +3,7 @@ package com.pageon.backend.security;
 
 import com.pageon.backend.common.enums.RoleType;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
@@ -75,6 +76,18 @@ public class JwtProvider {
                 .parseClaimsJws(token)
                 .getBody();
 
+    }
+
+    public Claims getClaimsIgnoreExpired(String token) {
+        try {
+            return Jwts.parserBuilder()
+                    .setSigningKey(accessKey)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+        } catch (ExpiredJwtException e) {
+            return e.getClaims();
+        }
     }
 
     public boolean validateRefreshToken(String refreshToken) {

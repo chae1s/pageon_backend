@@ -7,18 +7,15 @@ import com.pageon.backend.entity.ContentActionLog;
 import com.pageon.backend.repository.ActionLogRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.kafka.clients.consumer.Consumer;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.OffsetAndTimestamp;
+import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.TopicPartition;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.*;
 
 @Slf4j
@@ -28,6 +25,9 @@ public class ActionLogService {
 
     private final ActionLogRepository actionLogRepository;
     private final ConsumerFactory<String, ActionLogEvent> consumerFactory;
+
+    @Value("${topic.name}")
+    private String topicName;
 
     @Transactional
     public void createActionLog(Long userId, Long contentId, ContentType contentType, ActionType actionType, Integer ratingScore) {
@@ -43,65 +43,39 @@ public class ActionLogService {
         actionLogRepository.save(actionLog);
     }
 
-    public void processLogsByTimeRange(LocalDateTime start, LocalDateTime end) {
+    public void consumeActionLog() {
+        Consumer<String, ActionLogEvent> consumer = consumerFactory.createConsumer("pageon-log-consumer", null);
+        TopicPartition partition = new TopicPartition(topicName, 0);
+        consumer.assign(List.of(partition));
 
-        try (Consumer<String, ActionLogEvent> consumer = consumerFactory.createConsumer()) {
+        LocalDateTime endTime = LocalDateTime.now().minusHours(1)
+                .withMinute(59).withSecond(59).withNano(999999999);
 
-            TopicPartition partition = new TopicPartition("pageon-log-topic", 0);
-            consumer.assign(Collections.singletonList(partition));
+        List<ContentActionLog> result = new ArrayList<>();
+        long lastCommitOffset = -1;
 
-            long startTimestamp = start.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
-            long endTimestamp = end.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+        ConsumerRecords<String, ActionLogEvent> records = consumer.poll(Duration.ofSeconds(3));
+        for (ConsumerRecord<String, ActionLogEvent> record : records) {
+            ActionLogEvent event = record.value();
 
-            Map<TopicPartition, Long> timestampsToSearch = Map.of(partition, startTimestamp);
-            Map<TopicPartition, OffsetAndTimestamp> foundOffsets = consumer.offsetsForTimes(timestampsToSearch);
-
-            OffsetAndTimestamp startOffset = foundOffsets.get(partition);
-            if (startOffset == null) {
-                log.info("{} 시점 이후의 데이터가 카프카에 존재하지 않습니다.", start);
-                return;
+            if (event.getActionTime().isBefore(endTime)) {
+                result.add(event.toEntity());
+                lastCommitOffset = record.offset();
             }
-
-            // 3. 해당 시점으로 이동
-            consumer.seek(partition, startOffset.offset());
-
-            // 4. 데이터 수집
-            List<ContentActionLog> actionLogs = new ArrayList<>();
-            boolean keepRunning = true;
-
-            while (keepRunning) {
-
-                ConsumerRecords<String, ActionLogEvent> records = consumer.poll(Duration.ofSeconds(2));
-
-                if (records.isEmpty()) {
-                    log.info("더 이상 읽을 데이터가 없어 수집을 종료합니다.");
-                    break;
-                }
-
-                for (ConsumerRecord<String, ActionLogEvent> record : records) {
-                    // 종료 시간 체크
-                    if (record.timestamp() > endTimestamp) {
-                        keepRunning = false;
-                        break;
-                    }
-
-                    actionLogs.add(
-                            record.value().toEntity()
-                    );
-
-                }
-            }
-
-            if (!actionLogs.isEmpty()) {
-                return;
-            }
-
-            actionLogRepository.saveAll(actionLogs);
-
-        } catch (Exception e) {
-            log.error("로그 배치 처리 중 에러 발생", e);
         }
+
+        if (lastCommitOffset >= 0) {
+            Map<TopicPartition, OffsetAndMetadata> offsets = new HashMap<>();
+            offsets.put(partition, new OffsetAndMetadata(lastCommitOffset + 1));
+            consumer.commitSync(offsets);
+        }
+
+        actionLogRepository.saveAll(result);
+
+        consumer.close();
+
     }
 
 
 }
+

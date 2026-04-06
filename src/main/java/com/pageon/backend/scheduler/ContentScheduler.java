@@ -3,6 +3,7 @@ package com.pageon.backend.scheduler;
 import com.pageon.backend.common.annotation.ExecutionTimer;
 import com.pageon.backend.common.enums.SerialDay;
 import com.pageon.backend.common.utils.PageableUtil;
+import com.pageon.backend.service.ActionLogService;
 import com.pageon.backend.service.ContentCacheService;
 import com.pageon.backend.service.CreatorEpisodeService;
 import com.pageon.backend.service.RankingService;
@@ -12,6 +13,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Component
 @RequiredArgsConstructor
@@ -20,6 +22,7 @@ public class ContentScheduler {
     private final ContentCacheService contentCacheService;
     private final CreatorEpisodeService creatorEpisodeService;
     private final RankingService rankingService;
+    private final ActionLogService actionLogService;
 
     @ExecutionTimer
     @Scheduled(cron = "0 50 23 * * 0")
@@ -28,8 +31,8 @@ public class ContentScheduler {
         Pageable pageable = PageableUtil.redisPageable(18, "viewCount");
 
         for (SerialDay serialDay : SerialDay.values()) {
-            contentCacheService.refreshDailyWebnovels(pageable, serialDay);
-            contentCacheService.refreshDailyWebtoons(pageable, serialDay);
+            contentCacheService.refreshDailyContents("webnovels", pageable, serialDay);
+            contentCacheService.refreshDailyContents("webtoons", pageable, serialDay);
         }
 
     }
@@ -40,9 +43,9 @@ public class ContentScheduler {
 
         Pageable pageable = PageableUtil.redisPageable(6, "viewCount");
 
-        contentCacheService.refreshCompletedAll(pageable);
-        contentCacheService.refreshCompletedWebnovels(pageable);
-        contentCacheService.refreshCompletedWebtoons(pageable);
+        contentCacheService.refreshCompletedContents("all", pageable);
+        contentCacheService.refreshCompletedContents("webnovels", pageable);
+        contentCacheService.refreshCompletedContents("webtoons", pageable);
 
     }
 
@@ -52,8 +55,8 @@ public class ContentScheduler {
 
         Pageable pageable = PageableUtil.redisPageable(6, "viewCount");
 
-        contentCacheService.refreshKeywordWebnovels(pageable);
-        contentCacheService.refreshKeywordWebtoons(pageable);
+        contentCacheService.refreshKeywordContents("webnovels", pageable);
+        contentCacheService.refreshKeywordContents("webtoons", pageable);
 
     }
 
@@ -65,8 +68,8 @@ public class ContentScheduler {
 
         LocalDate baseline = LocalDate.now().plusDays(1);
 
-        contentCacheService.refreshNewWebnovels(pageable, baseline);
-        contentCacheService.refreshNewWebtoons(pageable, baseline);
+        contentCacheService.refreshNewContents("webnovels", pageable, baseline);
+        contentCacheService.refreshNewContents("webtoons", pageable, baseline);
 
     }
 
@@ -84,6 +87,7 @@ public class ContentScheduler {
     @Scheduled(cron = "0 0 * * * *")
     public void runHourlyRanking() {
         rankingService.updateHourlyRanking();
+        actionLogService.consumeActionLog();
     }
 
 

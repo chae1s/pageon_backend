@@ -51,7 +51,7 @@ public class WebtoonEpisodeProvider implements EpisodeProvider {
                 () -> new CustomException(ErrorCode.EPISODE_NOT_FOUND)
         );
 
-        actionHandler.handleViewEffects(userId, episode.getWebtoon(), episode, ContentType.WEBNOVEL);
+        actionHandler.handleViewEffects(userId, episode.getWebtoon(), episode, ContentType.WEBTOON);
 
         List<EpisodeImage> images = webtoonImageService.getWebtoonImages(episode.getImages());
         Long prevId = webtoonEpisodeRepository.findPrevEpisodeId(episode.getWebtoon().getId(), episode.getEpisodeNum());

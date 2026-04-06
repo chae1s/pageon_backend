@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Slf4j
@@ -141,7 +142,10 @@ public class ContentController {
     public ResponseEntity<List<ContentResponse.Simple>> getHourlyRank(@PathVariable String contentType) {
         log.info("Getting hourly ranking for content type {}", contentType);
         LocalDateTime rankingHour = LocalDateTime.now().withMinute(0).withSecond(0).withNano(0);
-        List<ContentResponse.Simple> contents = contentService.getHourlyRankingList(contentType, rankingHour);
+
+        String timeSuffix = rankingHour.format((DateTimeFormatter.ofPattern("yyyyMMddHH")));
+
+        List<ContentResponse.Simple> contents = contentService.getHourlyRankingList(contentType, timeSuffix, rankingHour);
         return ResponseEntity.ok(contents);
     }
 }

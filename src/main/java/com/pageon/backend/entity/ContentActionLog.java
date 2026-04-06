@@ -7,6 +7,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.DynamicUpdate;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Getter
 @Builder
@@ -29,4 +31,5 @@ public class ContentActionLog extends BaseTimeEntity {
     private ContentType contentType;
     @Builder.Default
     private Integer ratingScore = 0;
+    private LocalDateTime actionTime;
 }

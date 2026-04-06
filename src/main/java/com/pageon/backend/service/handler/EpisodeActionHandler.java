@@ -84,6 +84,7 @@ public class EpisodeActionHandler {
                 .contentType(contentType)
                 .actionType(actionType)
                 .ratingScore(ratingScore)
+                .actionTime(LocalDateTime.now())
                 .build();
 
     }
