@@ -107,7 +107,9 @@ spring:
 
 
 topic:
-  name: pageon-log-topic
+  name:
+    log: log-topic
+    notification: notification-topic
 
 cdn:
   cloudfront:

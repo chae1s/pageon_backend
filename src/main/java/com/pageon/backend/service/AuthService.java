@@ -17,16 +17,11 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.servlet.ThemeResolver;
 
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -39,23 +34,23 @@ public class AuthService {
 
 
     public ReissuedTokenResponse reissueToken(HttpServletRequest request, HttpServletResponse response) {
-        log.info("access token 만료, refresh token으로 새로운 access token 발급");
         String refreshToken = extractRefreshToken(request);
-        String accessToken = jwtProvider.resolveToken(request);
-        Claims claims = jwtProvider.getClaimsIgnoreExpired(accessToken);
-
+        Claims claims = jwtProvider.validateRefreshTokenAndClaims(refreshToken);
+        log.info("reissued token is {}", claims);
         Long userId = claims.get("userId", Long.class);
 
         String redisKey = "user:auth-info:" + userId;
-        Long remainTtl = redisTemplate.getExpire(refreshToken, TimeUnit.SECONDS);
+        Long remainTtl = redisTemplate.getExpire(redisKey, TimeUnit.SECONDS);
 
         TokenInfo tokenInfo = (TokenInfo) redisTemplate.opsForValue().getAndDelete(redisKey);
 
         if (remainTtl <= 0) {
+            log.info("reissued token is {}", tokenInfo);
             throw new CustomException(ErrorCode.INVALID_TOKEN);
         }
 
         if (tokenInfo == null) {
+            log.error("tokenInfo is null");
             throw new CustomException(ErrorCode.INVALID_TOKEN);
         }
 
@@ -65,6 +60,7 @@ public class AuthService {
 
         String reissueAccessToken = generateReissueToken(response, user, tokenInfo, remainTtl);
 
+        log.info("access token 만료, refresh token으로 새로운 access token 발급");
         return new ReissuedTokenResponse(reissueAccessToken, true);
 
     }
@@ -87,7 +83,7 @@ public class AuthService {
     private String generateReissueToken(HttpServletResponse response, User user, TokenInfo tokenInfo, Long remainTtl) {
         List<RoleType> roleTypes = getRoleTypes(user);
         String accessToken = jwtProvider.generateAccessToken(tokenInfo.getUserId(), tokenInfo.getEmail(), roleTypes);
-        String newRefreshToken = jwtProvider.generateRefreshToken(tokenInfo.getEmail());
+        String newRefreshToken = jwtProvider.generateRefreshToken(tokenInfo.getEmail(), user.getId());
 
         String redisKey = "user:auth-info:" + user.getId();
 
@@ -100,7 +96,7 @@ public class AuthService {
     private String generateNewToken(HttpServletResponse response, User user) {
         List<RoleType> roleTypes = getRoleTypes(user);
         String accessToken = jwtProvider.generateAccessToken(user.getId(), user.getEmail(), roleTypes);
-        String refreshToken = jwtProvider.generateRefreshToken(user.getEmail());
+        String refreshToken = jwtProvider.generateRefreshToken(user.getEmail(), user.getId());
         TokenInfo tokenInfo = new TokenInfo(user.getId(), user.getEmail(), refreshToken);
 
         Long expirationDate = Duration.ofDays(180).getSeconds();

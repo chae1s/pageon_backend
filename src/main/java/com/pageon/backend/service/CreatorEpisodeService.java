@@ -15,6 +15,7 @@ import com.pageon.backend.entity.base.EpisodeBase;
 import com.pageon.backend.exception.CustomException;
 import com.pageon.backend.exception.ErrorCode;
 import com.pageon.backend.repository.*;
+import com.pageon.backend.service.kafka.NotificationEventProducer;
 import com.pageon.backend.service.provider.EpisodeProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -142,7 +143,7 @@ public class CreatorEpisodeService {
     public WebnovelEpisodeDetail getWebnovelEpisodeDetail(Long userId, Long episodeId) {
         Creator creator = getCreator(userId);
 
-        WebnovelEpisode episode = webnovelEpisodeRepository.findById(episodeId).orElseThrow(
+        WebnovelEpisode episode = webnovelEpisodeRepository.findByIdAndDeletedAtIsNull(episodeId).orElseThrow(
                 () -> new CustomException(ErrorCode.EPISODE_NOT_FOUND)
         );
 
@@ -156,7 +157,7 @@ public class CreatorEpisodeService {
     public WebtoonEpisodeDetail getWebtoonEpisodeDetail(Long userId, Long episodeId) {
         Creator creator = getCreator(userId);
 
-        WebtoonEpisode episode = webtoonEpisodeRepository.findById(episodeId).orElseThrow(
+        WebtoonEpisode episode = webtoonEpisodeRepository.findByIdAndDeletedAtIsNull(episodeId).orElseThrow(
                 () -> new CustomException(ErrorCode.EPISODE_NOT_FOUND)
         );
 
@@ -233,28 +234,6 @@ public class CreatorEpisodeService {
 
         webtoonImageService.deleteWebtoonImages(episode);
         episode.deleteEpisode();
-    }
-
-    @Transactional
-    public void publishScheduledWebnovelEpisodes(LocalDate publishedAt) {
-        List<WebnovelEpisode> webnovelEpisodes = webnovelEpisodeRepository.findAllByPublishedAt(publishedAt);
-
-        if (webnovelEpisodes.isEmpty()) {
-            return;
-        }
-
-        webnovelEpisodes.forEach(EpisodeBase::publish);
-    }
-
-    @Transactional
-    public void publishScheduledWebtoonEpisodes(LocalDate publishedAt) {
-        List<WebtoonEpisode> webtoonEpisodes = webtoonEpisodeRepository.findAllByPublishedAt(publishedAt);
-
-        if (webtoonEpisodes.isEmpty()) {
-            return;
-        }
-
-        webtoonEpisodes.forEach(EpisodeBase::publish);
     }
 
     private Creator getCreator(Long userId) {

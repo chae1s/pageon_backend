@@ -54,7 +54,7 @@ class AuthServiceTest {
     void reissueToken_withValidRefreshToken_shouldReturnJwtTokenResponse() {
         // given
         String refreshToken = "sample-refresh-token";
-        TokenInfo tokenInfo = new TokenInfo(1L, "test@mail.com");
+        TokenInfo tokenInfo = new TokenInfo(1L, "test@mail.com", refreshToken);
 
         Long userId = 1L;
         User user = User.builder()
@@ -66,14 +66,14 @@ class AuthServiceTest {
         when(request.getCookies()).thenReturn(new Cookie[]{
                 new Cookie("refreshToken", refreshToken)
         });
-
+        String redisKey = "user:auth-info:" + userId;
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-        when(redisTemplate.getExpire(eq(refreshToken), any())).thenReturn(3600L);
-        when(valueOperations.getAndDelete(refreshToken)).thenReturn(tokenInfo);
+        when(redisTemplate.getExpire(eq(redisKey), any())).thenReturn(3600L);
+        when(valueOperations.getAndDelete(redisKey)).thenReturn(tokenInfo);
 
         when(userRepository.findWithRolesById(userId)).thenReturn(Optional.of(user));
         when(jwtProvider.generateAccessToken(any(), any(), any())).thenReturn("new-access-token");
-        when(jwtProvider.generateRefreshToken(any())).thenReturn("new-refresh-token");
+        when(jwtProvider.generateRefreshToken(any(), any())).thenReturn("new-refresh-token");
 
         //when
         ReissuedTokenResponse result = authService.reissueToken(request, response);
@@ -111,10 +111,11 @@ class AuthServiceTest {
         when(request.getCookies()).thenReturn(new Cookie[]{
                 new Cookie("refreshToken", refreshToken)
         });
+        String redisKey = "user:auth-info:" + 1L;
 
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-        when(redisTemplate.getExpire(eq(refreshToken), any())).thenReturn(3600L);
-        when(valueOperations.getAndDelete(refreshToken)).thenReturn(null);
+        when(redisTemplate.getExpire(eq(redisKey), any())).thenReturn(3600L);
+        when(valueOperations.getAndDelete(redisKey)).thenReturn(null);
 
         //when
         CustomException exception = assertThrows(CustomException.class,
@@ -135,15 +136,17 @@ class AuthServiceTest {
 
 
         Long userId = 1L;
-        TokenInfo tokenInfo = new TokenInfo(userId, "test@mail.com");
+        TokenInfo tokenInfo = new TokenInfo(userId, "test@mail.com", refreshToken);
 
         when(request.getCookies()).thenReturn(new Cookie[]{
                 new Cookie("refreshToken", refreshToken)
         });
 
+        String redisKey = "user:auth-info:" + userId;
+
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-        when(redisTemplate.getExpire(eq(refreshToken), any())).thenReturn(3600L);
-        when(valueOperations.getAndDelete(refreshToken)).thenReturn(tokenInfo);
+        when(redisTemplate.getExpire(eq(redisKey), any())).thenReturn(3600L);
+        when(valueOperations.getAndDelete(redisKey)).thenReturn(tokenInfo);
 
         when(userRepository.findWithRolesById(userId)).thenReturn(Optional.empty());
 
@@ -163,16 +166,18 @@ class AuthServiceTest {
     void reissueToken_withExpiredTtl_shouldThrowCustomException() {
         // given
         String refreshToken = "sample-refresh-token";
-        TokenInfo tokenInfo = new TokenInfo(1L, "test@mail.com");
+        TokenInfo tokenInfo = new TokenInfo(1L, "test@mail.com", refreshToken);
 
 
         when(request.getCookies()).thenReturn(new Cookie[]{
                 new Cookie("refreshToken", refreshToken)
         });
 
+        String redisKey = "user:auth-info:" + 1L;
+
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-        when(redisTemplate.getExpire(eq(refreshToken), any())).thenReturn(-2L);
-        when(valueOperations.getAndDelete(refreshToken)).thenReturn(tokenInfo);
+        when(redisTemplate.getExpire(eq(redisKey), any())).thenReturn(-2L);
+        when(valueOperations.getAndDelete(redisKey)).thenReturn(tokenInfo);
 
         //when
         CustomException exception = assertThrows(CustomException.class,
@@ -208,7 +213,7 @@ class AuthServiceTest {
         when(userRepository.findWithRolesById(userId)).thenReturn(Optional.of(user));
 
         when(jwtProvider.generateAccessToken(any(), any(), any())).thenReturn("access-token");
-        when(jwtProvider.generateRefreshToken(any())).thenReturn("refresh-token");
+        when(jwtProvider.generateRefreshToken(any(), any())).thenReturn("refresh-token");
 
         //when
         JwtTokenResponse result = authService.exchangeCode(response, tempCodeRequest);

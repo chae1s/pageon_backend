@@ -224,10 +224,13 @@ public class UserServiceTest {
     @DisplayName("유효한 이메일, 비밀번호로 로그인 시 토큰 발급 및 loginCheck true return")
     void login_withValidEmailAndPassword_shouldReturnAccessAndRefreshToken() {
         // given
+        Long userId = 1L;
         User user = User.builder()
+                .id(userId)
                 .email("test@mail.com")
                 .oAuthProvider(OAuthProvider.EMAIL)
                 .build();
+        String redisKey = "user:auth-info:" + userId;
 
         LoginRequest loginRequest = new LoginRequest("test@mail.com", "!test1234");
         Authentication authentication = mock(Authentication.class);
@@ -239,7 +242,7 @@ public class UserServiceTest {
         when(mockPrincipalUser.getUsers()).thenReturn(user);
 
         when(jwtProvider.generateAccessToken(any(), any(), any())).thenReturn("access-token");
-        when(jwtProvider.generateRefreshToken(any())).thenReturn("refresh-token");
+        when(jwtProvider.generateRefreshToken(any(), any())).thenReturn("refresh-token");
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
 
         //when
@@ -251,7 +254,7 @@ public class UserServiceTest {
         assertEquals(OAuthProvider.EMAIL, result.getOAuthProvider());
 
         verify(valueOperations).set(
-                eq("refresh-token"),
+                eq(redisKey),
                 any(TokenInfo.class),
                 eq(Duration.ofDays(180))
         );
@@ -278,7 +281,7 @@ public class UserServiceTest {
         when(authentication.getPrincipal()).thenReturn(mockPrincipalUser);
 
         when(jwtProvider.generateAccessToken(any(), any(), any())).thenReturn(null);
-        when(jwtProvider.generateRefreshToken(any())).thenReturn("refresh-token");
+        when(jwtProvider.generateRefreshToken(any(), any())).thenReturn("refresh-token");
 
 
         //when
@@ -321,7 +324,7 @@ public class UserServiceTest {
         when(mockPrincipalUser.getId()).thenReturn(1L);
 
         when(jwtProvider.generateAccessToken(any(), any(), any())).thenReturn("access-token");
-        when(jwtProvider.generateRefreshToken(any())).thenReturn("refresh-token");
+        when(jwtProvider.generateRefreshToken(any(), any())).thenReturn("refresh-token");
 
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         doThrow(new CustomException(ErrorCode.REDIS_CONNECTION_FAILED)).when(valueOperations).set(any(), any(), any());
@@ -346,16 +349,18 @@ public class UserServiceTest {
                 .id(userId)
                 .build();
 
+        String redisKey = "user:auth-info:" + userId;
+
         when(mockPrincipalUser.getId()).thenReturn(userId);
         when(userRepository.findByIdAndDeletedAtIsNull(userId)).thenReturn(Optional.of(user));
 
         when(request.getCookies()).thenReturn(new Cookie[]{
                 new Cookie("refreshToken", "sample-refresh-token")
         });
-        TokenInfo tokenInfo = new TokenInfo(1L, "test@mail.com");
+        TokenInfo tokenInfo = new TokenInfo(1L, "test@mail.com", "sample-refresh-token");
 
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-        when(valueOperations.get("sample-refresh-token")).thenReturn(tokenInfo);
+        when(valueOperations.get(redisKey)).thenReturn(tokenInfo);
 
         ArgumentCaptor<Cookie> cookieCaptor = ArgumentCaptor.forClass(Cookie.class);
 
@@ -364,8 +369,8 @@ public class UserServiceTest {
         
         // then
         verify(userRepository).findByIdAndDeletedAtIsNull(userId);
-        verify(valueOperations).get("sample-refresh-token");
-        verify(redisTemplate).delete("sample-refresh-token");
+        verify(valueOperations).get(redisKey);
+        verify(redisTemplate).delete(redisKey);
 
         verify(response).addCookie(cookieCaptor.capture());
         Cookie clearedCookie = cookieCaptor.getValue();
@@ -403,6 +408,8 @@ public class UserServiceTest {
                 .id(userId)
                 .build();
 
+        String redisKey = "user:auth-info:" + userId;
+
         when(mockPrincipalUser.getId()).thenReturn(userId);
         when(userRepository.findByIdAndDeletedAtIsNull(userId)).thenReturn(Optional.of(user));
 
@@ -411,7 +418,7 @@ public class UserServiceTest {
         });
 
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-        when(valueOperations.get("sample-refresh-token")).thenReturn(null);
+        when(valueOperations.get(redisKey)).thenReturn(null);
 
         //when & then
         assertDoesNotThrow(() -> userService.logout(mockPrincipalUser, request, response));
@@ -453,6 +460,7 @@ public class UserServiceTest {
         // given
         Long userId = 1L;
         User user = User.builder().id(userId).build();
+        String redisKey = "user:auth-info:" + userId;
 
         when(mockPrincipalUser.getId()).thenReturn(userId);
         when(userRepository.findByIdAndDeletedAtIsNull(userId)).thenReturn(Optional.of(user));
@@ -460,9 +468,9 @@ public class UserServiceTest {
         when(request.getCookies()).thenReturn(new Cookie[]{
                 new Cookie("refreshToken", "sample-refresh-token")
         });
-        TokenInfo tokenInfo = new TokenInfo(999L, "test2@mail.com");
+        TokenInfo tokenInfo = new TokenInfo(999L, "test2@mail.com", "sample-refresh-token");
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-        when(valueOperations.get("sample-refresh-token")).thenReturn(tokenInfo);
+        when(valueOperations.get(redisKey)).thenReturn(tokenInfo);
 
 
         //when
@@ -837,6 +845,7 @@ public class UserServiceTest {
                 .oAuthProvider(OAuthProvider.EMAIL)
                 .build();
 
+        String redisKey = "user:auth-info:" + userId;
         when(userRepository.findByIdAndDeletedAtIsNull(userId)).thenReturn(Optional.of(user));
         when(passwordEncoder.matches(anyString(), eq(password))).thenReturn(true);
 
@@ -845,10 +854,10 @@ public class UserServiceTest {
                 cookie
         });
 
-        TokenInfo tokenInfo = new TokenInfo(1L, "test@mail.com");
+        TokenInfo tokenInfo = new TokenInfo(1L, "test@mail.com", "sample-refresh-token");
 
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-        when(valueOperations.get("sample-refresh-token")).thenReturn(tokenInfo);
+        when(valueOperations.get(redisKey)).thenReturn(tokenInfo);
 
         //when
         Map<String, Object> result = userService.deleteAccount(
@@ -929,7 +938,7 @@ public class UserServiceTest {
                 .oAuthProvider(provider)
                 .providerId("sampleProviderId")
                 .build();
-
+        String refreshTokenRedisKey = "user:auth-info:" + userId;
         String socialAccessToken = "social-access-token";
         String redisKey = String.format("user:oauth:token:%s:%d", user.getOAuthProvider().toString(), user.getId());
 
@@ -943,8 +952,8 @@ public class UserServiceTest {
                 new Cookie("refreshToken", "sample-refresh-token")
         });
 
-        TokenInfo tokenInfo = new TokenInfo(1L, "test@mail.com");
-        when(valueOperations.get("sample-refresh-token")).thenReturn(tokenInfo);
+        TokenInfo tokenInfo = new TokenInfo(1L, "test@mail.com", "sample-refresh-token");
+        when(valueOperations.get(refreshTokenRedisKey)).thenReturn(tokenInfo);
 
         when(restTemplate.postForEntity(anyString(), any(HttpEntity.class), eq(String.class)))
                 .thenReturn(new ResponseEntity<>("ok", HttpStatus.OK));

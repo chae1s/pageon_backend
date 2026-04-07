@@ -5,22 +5,21 @@ import com.pageon.backend.common.enums.SerialDay;
 import com.pageon.backend.common.utils.PageableUtil;
 import com.pageon.backend.service.ActionLogService;
 import com.pageon.backend.service.ContentCacheService;
-import com.pageon.backend.service.CreatorEpisodeService;
 import com.pageon.backend.service.RankingService;
+import com.pageon.backend.service.creator.EpisodePublishService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Component
 @RequiredArgsConstructor
 public class ContentScheduler {
 
     private final ContentCacheService contentCacheService;
-    private final CreatorEpisodeService creatorEpisodeService;
+    private final EpisodePublishService episodePublishService;
     private final RankingService rankingService;
     private final ActionLogService actionLogService;
 
@@ -74,12 +73,12 @@ public class ContentScheduler {
     }
 
     @ExecutionTimer
-    @Scheduled(cron = "0 50 23 * * *")
+    @Scheduled(cron = "0 29 3 * * *")
     public void runDailyPublishing() {
         LocalDate tomorrow = LocalDate.now().plusDays(1);
 
-        creatorEpisodeService.publishScheduledWebnovelEpisodes(tomorrow);
-        creatorEpisodeService.publishScheduledWebtoonEpisodes(tomorrow);
+        episodePublishService.publishScheduledWebnovelEpisodes(tomorrow);
+        episodePublishService.publishScheduledWebtoonEpisodes(tomorrow);
 
     }
 

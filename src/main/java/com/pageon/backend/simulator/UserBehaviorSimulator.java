@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.Random;
 
 @Slf4j
@@ -27,10 +28,14 @@ public class UserBehaviorSimulator {
     private final ContentService contentService;
     private final ContentInfoLoader contentInfoLoader;
 
+    private final LocalDateTime stopTime = LocalDateTime.of(2026, 4, 7, 0, 59, 59, 999999999);
 
-    //@Scheduled(fixedDelay = 100)
+
+    @Scheduled(fixedDelay = 100)
     public void simulateRandomActivity() {
-
+        if (LocalDateTime.now().isAfter(stopTime)) {
+            return;
+        }
         Long userId = random.nextLong(10000) + 1;
 
         ContentInfo contentInfo = getRandomContent();

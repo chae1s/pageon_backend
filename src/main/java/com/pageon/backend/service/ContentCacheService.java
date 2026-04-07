@@ -88,7 +88,7 @@ public class ContentCacheService {
 
         log.info("Redis cache WARM-UP starting for new {} (Target: 6 items)", contentType);
         LocalDateTime since = date.minusDays(180).atStartOfDay();
-        ContentProvider provider = getProvider(date.toString());
+        ContentProvider provider = getProvider(contentType);
         Page<? extends Content> contents = provider.findNewArrivals(since, pageable);
 
         log.info("Successfully prepared 6 new {} for cache update.", contentType);

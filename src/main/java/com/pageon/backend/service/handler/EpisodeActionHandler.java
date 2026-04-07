@@ -2,7 +2,7 @@ package com.pageon.backend.service.handler;
 
 import com.pageon.backend.common.enums.ActionType;
 import com.pageon.backend.common.enums.ContentType;
-import com.pageon.backend.dto.payload.ActionLogEvent;
+import com.pageon.backend.dto.record.ActionLogEvent;
 import com.pageon.backend.entity.Content;
 import com.pageon.backend.entity.base.EpisodeBase;
 import com.pageon.backend.entity.base.EpisodeRatingBase;
@@ -78,15 +78,8 @@ public class EpisodeActionHandler {
     }
 
     private ActionLogEvent getActionLogEvent(Long userId, Long contentId, ContentType contentType, ActionType actionType, int ratingScore) {
-        return ActionLogEvent.builder()
-                .userId(userId)
-                .contentId(contentId)
-                .contentType(contentType)
-                .actionType(actionType)
-                .ratingScore(ratingScore)
-                .actionTime(LocalDateTime.now())
-                .build();
 
+        return new ActionLogEvent(userId, contentId, contentType, actionType, ratingScore, LocalDateTime.now());
     }
 
     private void addScoreInRedis(ContentType contentType, Long contentId, int score) {

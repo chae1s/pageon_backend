@@ -131,13 +131,13 @@ public class UserService {
 
     private String generateToken(PrincipalUser principalUser, HttpServletResponse response) {
         String accessToken = jwtProvider.generateAccessToken(principalUser.getId(), principalUser.getUsername(), principalUser.getRoleType());
-        String refreshToken = jwtProvider.generateRefreshToken(principalUser.getUsername());
+        String refreshToken = jwtProvider.generateRefreshToken(principalUser.getUsername(), principalUser.getId());
         if (accessToken == null || refreshToken == null) {
             throw new CustomException(ErrorCode.TOKEN_GENERATION_FAILED);
         }
 
         TokenInfo tokenInfo = new TokenInfo().updateTokenInfo(principalUser.getId(), principalUser.getUsername(), refreshToken);
-        String redisKey = "user:auth:" + principalUser.getId();
+        String redisKey = "user:auth-info:" + principalUser.getId();
 
         saveRefreshTokenInRedis(redisKey, tokenInfo);
 
@@ -160,7 +160,7 @@ public class UserService {
                 () -> new CustomException(ErrorCode.USER_NOT_FOUND)
         );
 
-        String redisKey = "user:auth:" + principalUser.getId();
+        String redisKey = "user:auth-info:" + principalUser.getId();
 
         deleteToken(redisKey, getRefreshToken(request));
 
@@ -351,7 +351,7 @@ public class UserService {
         user.delete();
 
         // 로그인 시 받은 refresh token 삭제
-        String tokenInfoRedisKey = "user:auth:" + user.getId();
+        String tokenInfoRedisKey = "user:auth-info:" + user.getId();
         deleteToken(tokenInfoRedisKey, getRefreshToken(request));
         return Map.of(
                 "isDeleted", true,

@@ -2,7 +2,7 @@ package com.pageon.backend.service;
 
 import com.pageon.backend.common.enums.ActionType;
 import com.pageon.backend.common.enums.ContentType;
-import com.pageon.backend.dto.payload.ActionLogEvent;
+import com.pageon.backend.dto.record.ActionLogEvent;
 import com.pageon.backend.entity.ContentActionLog;
 import com.pageon.backend.repository.ActionLogRepository;
 import lombok.RequiredArgsConstructor;
@@ -24,9 +24,9 @@ import java.util.*;
 public class ActionLogService {
 
     private final ActionLogRepository actionLogRepository;
-    private final ConsumerFactory<String, ActionLogEvent> consumerFactory;
+    private final ConsumerFactory<String, Object> consumerFactory;
 
-    @Value("${topic.name}")
+    @Value("${topic.name.log}")
     private String topicName;
 
     @Transactional
@@ -44,7 +44,7 @@ public class ActionLogService {
     }
 
     public void consumeActionLog() {
-        Consumer<String, ActionLogEvent> consumer = consumerFactory.createConsumer("pageon-log-consumer", null);
+        Consumer<String, Object> consumer = consumerFactory.createConsumer("log-group", null);
         TopicPartition partition = new TopicPartition(topicName, 0);
         consumer.assign(List.of(partition));
 
@@ -52,25 +52,37 @@ public class ActionLogService {
                 .withMinute(59).withSecond(59).withNano(999999999);
 
         List<ContentActionLog> result = new ArrayList<>();
-        long lastCommitOffset = -1;
+        long lastOffsetToCommit = -1;
+        boolean keepPolling = true;
 
-        ConsumerRecords<String, ActionLogEvent> records = consumer.poll(Duration.ofSeconds(3));
-        for (ConsumerRecord<String, ActionLogEvent> record : records) {
-            ActionLogEvent event = record.value();
+        while (keepPolling) {
+            ConsumerRecords<String, Object> records = consumer.poll(Duration.ofSeconds(1));
+            if (records.isEmpty()) break;
 
-            if (event.getActionTime().isBefore(endTime)) {
-                result.add(event.toEntity());
-                lastCommitOffset = record.offset();
+            for (ConsumerRecord<String, Object> record : records) {
+                if (record.value() instanceof ActionLogEvent event) {
+
+                    if (event.actionTime().isBefore(endTime)) {
+                        result.add(event.toEntity());
+                        lastOffsetToCommit = record.offset();
+                    } else {
+
+                        keepPolling = false;
+                        break;
+                    }
+                }
             }
         }
 
-        if (lastCommitOffset >= 0) {
-            Map<TopicPartition, OffsetAndMetadata> offsets = new HashMap<>();
-            offsets.put(partition, new OffsetAndMetadata(lastCommitOffset + 1));
-            consumer.commitSync(offsets);
-        }
+        if (!result.isEmpty()) {
+            actionLogRepository.saveAll(result);
 
-        actionLogRepository.saveAll(result);
+            if (lastOffsetToCommit >= 0) {
+                Map<TopicPartition, OffsetAndMetadata> offsets = new HashMap<>();
+                offsets.put(partition, new OffsetAndMetadata(lastOffsetToCommit + 1));
+                consumer.commitSync(offsets);
+            }
+        }
 
         consumer.close();
 

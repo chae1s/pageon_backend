@@ -7,7 +7,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 public interface InterestRepository extends JpaRepository<Interest, Long> {
     Boolean existsByUser_IdAndContentId(Long userId, Long contentId);
@@ -46,5 +49,10 @@ public interface InterestRepository extends JpaRepository<Interest, Long> {
     )
     Page<Interest> findWebtoonsByUserId(@Param("userId") Long userId, Pageable pageable);
 
+
+
+    @Query("SELECT i.content.id, i.user.id FROM Interest i " +
+            "WHERE i.content.id IN :contentIds")
+    List<Object[]> findUserIdsByContentIds(Set<Long> contentIds);
 
 }
