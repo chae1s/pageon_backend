@@ -191,7 +191,7 @@ public class UserService {
             throw new CustomException(ErrorCode.INVALID_TOKEN);
         }
 
-        redisTemplate.delete(refreshToken);
+        redisTemplate.delete(redisKey);
     }
 
     @Transactional

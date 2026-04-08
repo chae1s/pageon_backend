@@ -10,6 +10,7 @@ import com.pageon.backend.exception.CustomException;
 import com.pageon.backend.exception.ErrorCode;
 import com.pageon.backend.repository.UserRepository;
 import com.pageon.backend.security.JwtProvider;
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -48,6 +49,8 @@ class AuthServiceTest {
     private JwtProvider jwtProvider;
     @Mock
     private UserRepository userRepository;
+    @Mock
+    private Claims claims;
     
     @Test
     @DisplayName("accessToken 만료 후 유효한 refreshToken으로 새로운 accessToken 발급")
@@ -67,6 +70,8 @@ class AuthServiceTest {
                 new Cookie("refreshToken", refreshToken)
         });
         String redisKey = "user:auth-info:" + userId;
+        when(jwtProvider.validateRefreshTokenAndClaims(refreshToken)).thenReturn(claims);
+        when(claims.get("userId", Long.class)).thenReturn(userId);
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         when(redisTemplate.getExpire(eq(redisKey), any())).thenReturn(3600L);
         when(valueOperations.getAndDelete(redisKey)).thenReturn(tokenInfo);
@@ -106,13 +111,16 @@ class AuthServiceTest {
     @DisplayName("redis에 refreshToken로 저장된 정보가 존재하지 않을 때 CustomException 발생")
     void reissueToken_withNoExistingTokenInfo_shouldThrowCustomException() {
         // given
+        Long userId = 1L;
         String refreshToken = "sample-refresh-token";
 
         when(request.getCookies()).thenReturn(new Cookie[]{
                 new Cookie("refreshToken", refreshToken)
         });
-        String redisKey = "user:auth-info:" + 1L;
+        String redisKey = "user:auth-info:" + userId;
 
+        when(jwtProvider.validateRefreshTokenAndClaims(refreshToken)).thenReturn(claims);
+        when(claims.get("userId", Long.class)).thenReturn(userId);
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         when(redisTemplate.getExpire(eq(redisKey), any())).thenReturn(3600L);
         when(valueOperations.getAndDelete(redisKey)).thenReturn(null);
@@ -144,6 +152,8 @@ class AuthServiceTest {
 
         String redisKey = "user:auth-info:" + userId;
 
+        when(jwtProvider.validateRefreshTokenAndClaims(refreshToken)).thenReturn(claims);
+        when(claims.get("userId", Long.class)).thenReturn(userId);
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         when(redisTemplate.getExpire(eq(redisKey), any())).thenReturn(3600L);
         when(valueOperations.getAndDelete(redisKey)).thenReturn(tokenInfo);
@@ -165,6 +175,7 @@ class AuthServiceTest {
     @DisplayName("refresh token의 유효기간이 0 이하면 CustomException 발생")
     void reissueToken_withExpiredTtl_shouldThrowCustomException() {
         // given
+        Long userId = 1L;
         String refreshToken = "sample-refresh-token";
         TokenInfo tokenInfo = new TokenInfo(1L, "test@mail.com", refreshToken);
 
@@ -175,6 +186,8 @@ class AuthServiceTest {
 
         String redisKey = "user:auth-info:" + 1L;
 
+        when(jwtProvider.validateRefreshTokenAndClaims(refreshToken)).thenReturn(claims);
+        when(claims.get("userId", Long.class)).thenReturn(userId);
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         when(redisTemplate.getExpire(eq(redisKey), any())).thenReturn(-2L);
         when(valueOperations.getAndDelete(redisKey)).thenReturn(tokenInfo);
@@ -198,7 +211,7 @@ class AuthServiceTest {
         String tempCode = "temp-code";
         TempCodeRequest tempCodeRequest = new TempCodeRequest(userId, tempCode);
 
-        String redisKey = "user:oauth:code:1";
+        String redisKey = "user:oauth:code:" + userId;
 
         Long expirationDate = Duration.ofDays(180).getSeconds();
 
@@ -222,8 +235,9 @@ class AuthServiceTest {
         assertTrue(result.getIsLogin());
         assertEquals("access-token", result.getAccessToken());
 
+        String refreshTokenRedisKey = "user:auth-info:" + userId;
         verify(valueOperations).set(
-                eq("refresh-token"),
+                eq(refreshTokenRedisKey),
                 any(TokenInfo.class),
                 eq(Duration.ofSeconds(expirationDate))
         );

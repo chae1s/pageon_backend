@@ -100,8 +100,9 @@ public class AuthService {
         TokenInfo tokenInfo = new TokenInfo(user.getId(), user.getEmail(), refreshToken);
 
         Long expirationDate = Duration.ofDays(180).getSeconds();
+        String redisKey = "user:auth-info:" + user.getId();
 
-        saveRefreshTokenInRedis(accessToken, tokenInfo, expirationDate);
+        saveRefreshTokenInRedis(redisKey, tokenInfo, expirationDate);
         jwtProvider.sendTokens(response, accessToken, refreshToken);
 
         return accessToken;

@@ -237,6 +237,7 @@ public class UserServiceTest {
 
         when(authenticationManager.authenticate(any())).thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(mockPrincipalUser);
+        when(mockPrincipalUser.getId()).thenReturn(userId);
         when(mockPrincipalUser.getUsername()).thenReturn("test@mail.com");
         when(mockPrincipalUser.getRoleType()).thenReturn(List.of(RoleType.ROLE_USER));
         when(mockPrincipalUser.getUsers()).thenReturn(user);
@@ -468,7 +469,7 @@ public class UserServiceTest {
         when(request.getCookies()).thenReturn(new Cookie[]{
                 new Cookie("refreshToken", "sample-refresh-token")
         });
-        TokenInfo tokenInfo = new TokenInfo(999L, "test2@mail.com", "sample-refresh-token");
+        TokenInfo tokenInfo = new TokenInfo(999L, "test2@mail.com", "other-refresh-token");
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         when(valueOperations.get(redisKey)).thenReturn(tokenInfo);
 
