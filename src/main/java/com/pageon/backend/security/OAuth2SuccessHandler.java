@@ -34,8 +34,6 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     private final UserRepository userRepository;
     private final JwtProvider jwtProvider;
     private final RedisTemplate<String, Object> redisTemplate;
-    @Value("${api.frontend-url}")
-    private String frontendUrl;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
@@ -48,7 +46,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         redisTemplate.opsForValue().set(redisKey, tempCode, 10L, TimeUnit.SECONDS);
 
         String redirectUrl = UriComponentsBuilder
-                .fromUriString(frontendUrl + "oauth/callback")
+                .fromUriString("https://pageon.store/oauth/callback")
                 .queryParam("userId", principalUser.getId())
                 .queryParam("tempCode", tempCode)
                 .build()
