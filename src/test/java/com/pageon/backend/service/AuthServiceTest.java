@@ -170,6 +170,7 @@ class AuthServiceTest {
         assertEquals(ErrorCode.USER_NOT_FOUND, ErrorCode.valueOf(exception.getErrorCode()));
         
     }
+    
 
     @Test
     @DisplayName("refresh token의 유효기간이 0 이하면 CustomException 발생")
