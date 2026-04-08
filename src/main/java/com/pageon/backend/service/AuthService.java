@@ -126,7 +126,7 @@ public class AuthService {
         String redisKey = String.format("user:oauth:code:%d", tempCodeRequest.getUserId());
 
         String tempCode = (String) redisTemplate.opsForValue().getAndDelete(redisKey);
-        log.info("temp code: {}", tempCode);
+        
         if (!tempCodeRequest.getTempCode().equals(tempCode)) {
             throw new CustomException(ErrorCode.INVALID_TEMP_CODE);
         }
@@ -137,7 +137,6 @@ public class AuthService {
 
         String accessToken = generateNewToken(response, user);
 
-        log.info("user id: {}", user.getId());
         List<String> userRoles = getRoleTypes(user).stream()
                 .map(RoleType::toString)
                 .toList();
@@ -149,7 +148,6 @@ public class AuthService {
             targetPath = "/admin/dashboard";
         }
 
-        log.info("target path: {}", targetPath);
         return new JwtTokenResponse(true, accessToken, user.getOAuthProvider(), userRoles, targetPath);
 
     }
