@@ -4,6 +4,7 @@ import com.pageon.backend.entity.Settlement;
 
 public record PayoutTarget(
         Long creatorId,
+        Long userId,
         Settlement settlement
 ) {
 

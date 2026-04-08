@@ -109,7 +109,9 @@ spring:
 topic:
   name:
     log: log-topic
-    notification: notification-topic
+    notification:
+      episode: ep-notification-topic
+      settlement: settlement-notification-topic
 
 cdn:
   cloudfront:

@@ -3,6 +3,7 @@ package com.pageon.backend.service;
 import com.pageon.backend.common.enums.ContentType;
 import com.pageon.backend.common.enums.NotificationType;
 import com.pageon.backend.dto.record.EpisodeNotificationEvent;
+import com.pageon.backend.dto.record.SettlementNotificationEvent;
 import com.pageon.backend.dto.response.SseData;
 import com.pageon.backend.entity.Notification;
 import com.pageon.backend.entity.User;
@@ -58,16 +59,36 @@ public class NotificationService {
                 () -> new CustomException(ErrorCode.USER_NOT_FOUND)
         );
         if (event.notificationType() == NotificationType.NEW_EPISODE_RELEASED) {
-            SseData sseData = toUserNotification(event);
+            SseData sseData = buildEpisodeUpdateNotification(event);
             sendToClient(user.getId(),"pageon", sseData, "Episode Published");
         } else if (event.notificationType() == NotificationType.SCHEDULED_EPISODE_POSTED) {
-            SseData sseData = toCreatorNotification(event);
+            SseData sseData = buildScheduledEpisodeUploadNotification(event);
             sendToClient(user.getId(), "pageon", sseData, "Episode Published");
         }
 
     }
 
-    private SseData toCreatorNotification(EpisodeNotificationEvent event) {
+    public void payoutSettlement(SettlementNotificationEvent event) {
+        User user = userRepository.findByIdAndDeletedAtIsNull(event.userId())
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        String message = (event.notificationType() == NotificationType.SETTLEMENT_SUCCESS)
+                ? String.format("%d월 정산금이 지급되었습니다.", event.month())
+                : String.format("%d월 정산금 지급이 실패하였습니다.", event.month());
+
+        String sseType = (event.notificationType() == NotificationType.SETTLEMENT_SUCCESS)
+                ? "Settlement SUCCESS"
+                : "Settlement FAILED";
+
+        SseData sseData = new SseData(
+                message,
+                "/creators/settlements?settlementId=" + event.settlementId()
+        );
+
+        sendToClient(user.getId(), "pageon", sseData, sseType);
+    }
+
+    private SseData buildScheduledEpisodeUploadNotification(EpisodeNotificationEvent event) {
         String content = String.format("'%s'의 예약된 에피소드가 업로드 됐습니다.", event.contentTitle());
 
         String redirectUrl = "/creators/contents/episodes/dashboard?contentId=" + event.contentId();
@@ -85,7 +106,7 @@ public class NotificationService {
         return new SseData(content, redirectUrl);
     }
 
-    private SseData toUserNotification(EpisodeNotificationEvent event) {
+    private SseData buildEpisodeUpdateNotification(EpisodeNotificationEvent event) {
         String content = String.format("'%s'의 새로운 에피소드가 업데이트 됐습니다.", event.contentTitle());
 
         String redirectUrl = "";
@@ -107,6 +128,7 @@ public class NotificationService {
 
         return new SseData(content, redirectUrl);
     }
+
 
     private <T> void sendToClient(Long userId, String name, T data, String comment) {
         SseEmitter emitter = emitters.get(userId);

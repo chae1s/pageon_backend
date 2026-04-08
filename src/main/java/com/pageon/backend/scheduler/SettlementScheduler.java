@@ -14,14 +14,14 @@ public class SettlementScheduler {
 
     private final CreatorSettlementService creatorSettlementService;
 
-    @Scheduled(cron = "0 55 17 * * *")
+    @Scheduled(cron = "0 45 16 * * *")
     public void runSettlement() {
         LocalDateTime scheduledAt = LocalDateTime.now()
                 .withDayOfMonth(1)
                 .withHour(0).withMinute(0).withSecond(0).withNano(0);
 
         LocalDateTime testTime = LocalDateTime.now()
-                .withMonth(1)
+                .withMonth(2)
                 .withDayOfMonth(1)
                 .withHour(0).withMinute(0).withSecond(0).withNano(0);
 
@@ -29,14 +29,14 @@ public class SettlementScheduler {
     }
 
     @ExecutionTimer
-    @Scheduled(cron = "0 57 17 * * *")
+    @Scheduled(cron = "0 48 16 * * *")
     public void runPayout() {
         LocalDateTime payoutDate = LocalDateTime.now()
                 .withDayOfMonth(10)
                 .withHour(0).withMinute(0).withSecond(0).withNano(0);
 
         LocalDateTime testTime = LocalDateTime.now()
-                .withMonth(1)
+                .withMonth(2)
                 .withDayOfMonth(10)
                 .withHour(0).withMinute(0).withSecond(0).withNano(0);
 

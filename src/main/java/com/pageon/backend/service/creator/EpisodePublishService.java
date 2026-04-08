@@ -10,7 +10,6 @@ import com.pageon.backend.repository.InterestRepository;
 import com.pageon.backend.service.kafka.NotificationEventProducer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
