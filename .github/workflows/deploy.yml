@@ -37,15 +37,15 @@ jobs:
                     kakao:
                       client-id: ${{ secrets.KAKAO_CLIENT_ID }}
                       client-secret: ${{ secrets.KAKAO_CLIENT_SECRET }}
-                      redirect-uri: http://${{ secrets.EC2_HOST }}/login/oauth2/code/kakao
+                      redirect-uri: https://${{ secrets.EC2_HOST }}/login/oauth2/code/kakao
                     naver:
                       client-id: ${{ secrets.NAVER_CLIENT_ID }}
                       client-secret: ${{ secrets.NAVER_CLIENT_SECRET }}
-                      redirect-uri: http://${{ secrets.EC2_HOST }}/login/oauth2/code/naver
+                      redirect-uri: https://${{ secrets.EC2_HOST }}/login/oauth2/code/naver
                     google:
                       client-id: ${{ secrets.GOOGLE_CLIENT_ID }}
                       client-secret: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-                      redirect-uri: http://${{ secrets.EC2_HOST }}/login/oauth2/code/google
+                      redirect-uri: https://${{ secrets.EC2_HOST }}/login/oauth2/code/google
             mail:
               username: gopageon@gmail.com
               password: ${{ secrets.MAIL_PASSWORD }}
