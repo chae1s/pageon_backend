@@ -102,9 +102,6 @@ spring:
     init:
       mode: always
 
-  kafka:
-    bootstrap-servers: localhost:29092
-
 
 topic:
   name:
