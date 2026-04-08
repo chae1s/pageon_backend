@@ -82,7 +82,7 @@ public class NotificationService {
 
         SseData sseData = new SseData(
                 message,
-                "/creators/settlements?settlementId=" + event.settlementId()
+                "/creators/revenue/history?settlementId=" + event.settlementId()
         );
 
         sendToClient(user.getId(), "pageon", sseData, sseType);
