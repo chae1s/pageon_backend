@@ -1,8 +1,10 @@
 package com.pageon.backend.service.creator;
 
 import com.pageon.backend.common.annotation.ExecutionTimer;
+import com.pageon.backend.common.enums.NotificationType;
 import com.pageon.backend.common.enums.SettlementStatus;
 import com.pageon.backend.dto.record.PayoutTarget;
+import com.pageon.backend.dto.record.SettlementNotificationEvent;
 import com.pageon.backend.dto.record.SettlementTarget;
 import com.pageon.backend.dto.response.creator.settlement.SettlementSummary;
 import com.pageon.backend.dto.response.creator.settlement.SettlementDetail;
@@ -15,6 +17,7 @@ import com.pageon.backend.repository.CreatorRepository;
 import com.pageon.backend.repository.creator.CreatorBankAccountRepository;
 import com.pageon.backend.repository.creator.CreatorEarningRepository;
 import com.pageon.backend.repository.creator.SettlementRepository;
+import com.pageon.backend.service.kafka.NotificationEventProducer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -40,6 +43,7 @@ public class CreatorSettlementService {
     private final CreatorRepository creatorRepository;
     private final CreatorEarningRepository creatorEarningRepository;
     private final CreatorBankAccountRepository creatorBankAccountRepository;
+    private final NotificationEventProducer producer;
 
     @ExecutionTimer
     @Transactional
@@ -146,12 +150,18 @@ public class CreatorSettlementService {
                 CreatorBankAccount account = accountMap.get(target.creatorId());
                 if (account == null) {
                     target.settlement().fail("유효한 계좌 정보 없음");
+                    producer.settlementMessage(
+                            new SettlementNotificationEvent(target.userId(), target.settlement().getId(), NotificationType.SETTLEMENT_FAILED, payoutDate.getMonthValue())
+                    );
                     continue;
                 }
 
                 // 정산 금액 지급 메소드 실행
 
                 target.settlement().complete(payoutDate);
+                producer.settlementMessage(
+                        new SettlementNotificationEvent(target.userId(), target.settlement().getId(), NotificationType.SETTLEMENT_SUCCESS, payoutDate.getMonthValue())
+                );
 
             } catch (Exception e) {
                 log.error("creatorId: {} 정산 금액 지급 실패 - {}", target.creatorId(), e.getMessage());

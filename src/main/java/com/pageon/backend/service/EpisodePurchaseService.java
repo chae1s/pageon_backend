@@ -1,6 +1,6 @@
 package com.pageon.backend.service;
 
-import com.pageon.backend.dto.payload.ActionLogEvent;
+import com.pageon.backend.dto.record.ActionLogEvent;
 import com.pageon.backend.entity.base.EpisodeBase;
 import com.pageon.backend.common.enums.ActionType;
 import com.pageon.backend.common.enums.ContentType;
@@ -10,7 +10,6 @@ import com.pageon.backend.exception.CustomException;
 import com.pageon.backend.exception.ErrorCode;
 import com.pageon.backend.repository.*;
 import com.pageon.backend.service.handler.EpisodeActionHandler;
-import com.pageon.backend.service.kafka.ActionLogProducer;
 import com.pageon.backend.service.provider.EpisodeProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -166,19 +165,5 @@ public class EpisodePurchaseService {
                 .findFirst()
                 .orElseThrow(() -> new CustomException(ErrorCode.INVALID_CONTENT_TYPE));
     }
-
-    private ActionLogEvent getActionLogEvent(Long userId, Long contentId, ContentType contentType, ActionType actionType, int ratingScore) {
-        return ActionLogEvent.builder()
-                .userId(userId)
-                .contentId(contentId)
-                .contentType(contentType)
-                .actionType(actionType)
-                .ratingScore(ratingScore)
-                .build();
-
-    }
-
-
-
 
 }

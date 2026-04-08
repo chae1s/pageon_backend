@@ -42,7 +42,7 @@ public interface SettlementRepository extends JpaRepository<Settlement, Long> {
     Page<Settlement> findAllByCreatorId(@Param("creatorId") Long creatorId, Pageable pageable);
 
     @Query("SELECT new com.pageon.backend.dto.record.PayoutTarget(" +
-            "s.creator.id, s) FROM Settlement s " +
+            "s.creator.id, s.creator.user.id, s) FROM Settlement s " +
             "WHERE s.settlementStatus = 'PENDING' " +
             "AND s.payoutDate = :payoutDate")
     List<PayoutTarget> findAllPayoutTargets(@Param("payoutDate")LocalDateTime payoutDate);

@@ -107,7 +107,11 @@ spring:
 
 
 topic:
-  name: pageon-log-topic
+  name:
+    log: log-topic
+    notification:
+      episode: ep-notification-topic
+      settlement: settlement-notification-topic
 
 cdn:
   cloudfront:

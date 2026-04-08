@@ -41,7 +41,6 @@ public class RankingService {
 
     @Transactional
     @ExecutionTimer
-    @Scheduled(cron = "0 0 * * * *")
     public void updateHourlyRanking() {
 
         LocalDateTime rankingHour = LocalDateTime.now().withMinute(0).withSecond(0).withNano(0);
@@ -98,13 +97,14 @@ public class RankingService {
         rankingRepository.saveAll(rankings);
 
         String type = (contentType == ContentType.WEBNOVEL) ? "webnovels" : "webtoons";
+        String timeSuffix = rankingHour.format((DateTimeFormatter.ofPattern("yyyyMMddHH")));
 
-        getHourlyRankingList(contents, type, rankingHour);
+        getHourlyRankingList(contents, type, timeSuffix);
     }
 
 
-    @CachePut(value = "contents:hourly", key = "#contentType + ':' + #rankingHour")
-    public List<ContentResponse.Simple> getHourlyRankingList(List<Content> contents, String contentType, LocalDateTime rankingHour) {
+    @CachePut(value = "contents:hourly", key = "#contentType + ':' + #timeSuffix")
+    public List<ContentResponse.Simple> getHourlyRankingList(List<Content> contents, String contentType, String timeSuffix) {
 
         return contents.stream()
                 .limit(9)

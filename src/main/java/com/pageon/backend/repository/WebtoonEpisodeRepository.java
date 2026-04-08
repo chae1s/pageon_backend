@@ -70,10 +70,13 @@ public interface WebtoonEpisodeRepository extends JpaRepository<WebtoonEpisode, 
             "WHERE e.webtoon.id = :contentId AND e.episodeStatus = :episodeStatus AND e.deletedAt IS NULL")
     Page<EpisodeList> findByWebtoon_IdAndEpisodeStatus(@Param("contentId") Long contentId, @Param("episodeStatus") EpisodeStatus episodeStatus, Pageable pageable);
 
-    @EntityGraph(attributePaths = {"webtoon", "images"})
+    @EntityGraph(attributePaths = {"webtoon.creator", "images"})
     Optional<WebtoonEpisode> findByIdAndDeletedAtIsNull(Long episodeId);
 
     @Query("SELECT we FROM WebtoonEpisode we " +
+            "JOIN FETCH we.webtoon w " +
+            "JOIN FETCH w.creator c " +
+            "JOIN FETCH c.user " +
             "WHERE we.publishedAt = :publishedAt AND we.episodeStatus = 'SCHEDULED' AND we.deletedAt IS NULL")
     List<WebtoonEpisode> findAllByPublishedAt(LocalDate publishedAt);
 

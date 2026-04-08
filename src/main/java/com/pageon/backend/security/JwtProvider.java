@@ -3,6 +3,7 @@ package com.pageon.backend.security;
 
 import com.pageon.backend.common.enums.RoleType;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
@@ -38,11 +39,12 @@ public class JwtProvider {
     }
 
     /* Refresh Token 발급 */
-    public String generateRefreshToken(String email) {
+    public String generateRefreshToken(String email, Long userId) {
         Date now = new Date();
         return Jwts.builder()
                 .setSubject(email)
                 .claim("email", email)
+                .claim("userId", userId)
                 .setIssuedAt(now)
                 .setExpiration(new Date(now.getTime() + REFRESH_TOKEN_EXPIRES_IN))
                 .signWith(refreshKey, SignatureAlgorithm.HS256)
@@ -77,13 +79,25 @@ public class JwtProvider {
 
     }
 
-    public boolean validateRefreshToken(String refreshToken) {
-        Jwts.parserBuilder()
+    public Claims getClaimsIgnoreExpired(String token) {
+        try {
+            return Jwts.parserBuilder()
+                    .setSigningKey(accessKey)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+        } catch (ExpiredJwtException e) {
+            return e.getClaims();
+        }
+    }
+
+    public Claims validateRefreshTokenAndClaims(String refreshToken) {
+        return Jwts.parserBuilder()
                 .setSigningKey(refreshKey)
                 .build()
-                .parseClaimsJws(refreshToken);
+                .parseClaimsJws(refreshToken)
+                .getBody();
 
-        return true;
     }
 
     public Long getUserId(String token) {

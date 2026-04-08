@@ -233,8 +233,8 @@ public class ContentService {
 
     @ExecutionTimer
     @Transactional(readOnly = true)
-    @Cacheable(value = "contents:hourly", key = "#contentType + ':' + #rankingHour")
-    public List<ContentResponse.Simple> getHourlyRankingList(String contentType, LocalDateTime rankingHour) {
+    @Cacheable(value = "contents:hourly", key = "#contentType + ':' + #timeSuffix")
+    public List<ContentResponse.Simple> getHourlyRankingList(String contentType, String timeSuffix, LocalDateTime rankingHour) {
         ContentProvider provider = getProvider(contentType);
 
         List<ContentRanking> rankings = provider.findAllHourlyRankings(rankingHour);

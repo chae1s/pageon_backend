@@ -74,6 +74,9 @@ public interface WebnovelEpisodeRepository extends JpaRepository<WebnovelEpisode
     Optional<WebnovelEpisode> findByIdAndDeletedAtIsNull(Long episodeId);
 
     @Query("SELECT we FROM WebnovelEpisode we " +
+            "JOIN FETCH we.webnovel w " +
+            "JOIN FETCH w.creator c " +
+            "JOIN FETCH c.user " +
             "WHERE we.publishedAt = :publishedAt AND we.episodeStatus = 'SCHEDULED' AND we.deletedAt IS NULL ")
     List<WebnovelEpisode> findAllByPublishedAt(LocalDate publishedAt);
 
@@ -83,4 +86,5 @@ public interface WebnovelEpisodeRepository extends JpaRepository<WebnovelEpisode
             WHERE we.webnovel.id = :contentId
             """)
     void bulkUpdateDeletedAt(@Param("contentId") Long contentId, @Param("deletedAt") LocalDateTime deletedAt);
+
 }
