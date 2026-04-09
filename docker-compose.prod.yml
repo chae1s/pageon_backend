@@ -82,6 +82,8 @@ services:
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
       - GF_AUTH_ANONYMOUS_ENABLED=true
       - GF_AUTH_BASIC_ENABLED=false
+    volumes:
+      - grafana-storage:/var/lib/grafana
     depends_on:
       - influxdb
     restart: always
@@ -91,9 +93,15 @@ services:
     container_name: prometheus
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
     ports:
       - "9090:9090"
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
       - '--web.enable-remote-write-receiver'
     restart: always
+
+volumes:
+  grafana-storage:
+  prometheus-data:
