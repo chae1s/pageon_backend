@@ -13,8 +13,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -46,15 +49,28 @@ public class WebnovelProvider implements ContentProvider{
             return episodes.stream()
                     .map(e -> EpisodeResponse.Summary.fromEntity(e, null)).toList();
         } else {
+            Map<Long, EpisodeResponse.Purchase> purchaseMap = getPurchaseMap(userId, contentId);
+
             return episodes.stream().map(e -> {
-                EpisodePurchase episodePurchase = episodePurchaseRepository.findByUser_IdAndContent_IdAndEpisodeId(userId, contentId, e.getId()).orElse(null);
+
                 return EpisodeResponse.Summary.fromEntity(
                         e,
-                        (episodePurchase != null) ? EpisodeResponse.Purchase.fromEntity(episodePurchase) : null
+                        purchaseMap.getOrDefault(e.getId(), null)
                 );
             }).toList();
         }
     }
+
+    private Map<Long, EpisodeResponse.Purchase> getPurchaseMap(Long userId, Long contentId) {
+        List<EpisodePurchase> episodePurchases = episodePurchaseRepository.findByUser_IdAndContent_Id(userId, contentId);
+        return episodePurchases.stream()
+                .collect(Collectors.toMap(
+                        EpisodePurchase::getEpisodeId,
+                        EpisodeResponse.Purchase::fromEntity
+                ));
+    }
+
+
 
     @Override
     public Page<? extends Content> findByKeyword(String keyword, Pageable pageable) {

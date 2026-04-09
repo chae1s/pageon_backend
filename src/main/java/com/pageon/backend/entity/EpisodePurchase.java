@@ -12,7 +12,9 @@ import java.time.LocalDateTime;
 @Getter
 @Builder
 @DynamicUpdate
-@Table(name = "episode_purchases")
+@Table(name = "episode_purchases", indexes = {
+        @Index(name = "idx_user_content_episode", columnList = "user_id, content_id, episode_id")
+})
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 public class EpisodePurchase extends BaseTimeEntity {

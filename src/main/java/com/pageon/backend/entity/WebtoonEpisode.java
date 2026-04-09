@@ -15,7 +15,8 @@ import java.util.List;
 @SuperBuilder
 @DynamicUpdate
 @Table(name = "webtoon_episodes", indexes = {
-        @Index(name = "idx_wte_published_status", columnList = "published_at, episode_status")
+        @Index(name = "idx_wte_published_status", columnList = "published_at, episode_status"),
+        @Index(name = "idx_webtoon_episode_status", columnList = "webtoon_id, episode_status")
 })
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
