@@ -21,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,6 +42,7 @@ public class ContentService {
     private final UserRepository userRepository;
     private final ReadingHistoryRepository readingHistoryRepository;
     private final EpisodeActionHandler actionHandler;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     @Transactional(readOnly = true)
     public ContentResponse.Detail getContentDetail(PrincipalUser principalUser, String contentType, Long contentId) {
@@ -63,9 +65,13 @@ public class ContentService {
 
     public ContentDetailResponse getContentDetail(Long userId, Long contentId) {
 
-        ContentDetailResponse content = contentRepository.findContentDetail(contentId).orElseThrow(
-                () -> new CustomException(ErrorCode.CONTENT_NOT_FOUND)
-        );
+        ContentDetailResponse content = (ContentDetailResponse) redisTemplate.opsForValue().get("contents:detail:" + contentId);
+
+        if (content == null) {
+            content = contentRepository.findContentDetail(contentId).orElseThrow(
+                    () -> new CustomException(ErrorCode.CONTENT_NOT_FOUND)
+            );
+        }
 
         Boolean isInterested = (userId != null) && interestRepository.existsByUser_IdAndContentId(userId, contentId);
 

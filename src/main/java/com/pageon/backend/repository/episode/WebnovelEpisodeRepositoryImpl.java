@@ -12,8 +12,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.pageon.backend.entity.QWebnovelEpisode.webnovelEpisode;
 
@@ -61,6 +61,45 @@ public class WebnovelEpisodeRepositoryImpl implements WebnovelEpisodeRepositoryC
         ).orElse(0L);
 
         return new PageImpl<>(responses, pageable, total);
+    }
+
+    @Override
+    public Map<Long, List<EpisodeSummaryResponse>> findEpisodeSummariesByContentIds(List<Long> contentIds) {
+        return queryFactory
+                .select(
+                        webnovelEpisode.webnovel.id,
+                        webnovelEpisode.id,
+                        webnovelEpisode.episodeNum,
+                        webnovelEpisode.episodeTitle,
+                        webnovelEpisode.publishedAt,
+                        webnovelEpisode.purchasePrice,
+                        Expressions.nullExpression(Integer.class)
+                )
+                .from(webnovelEpisode)
+                .where(
+                        webnovelEpisode.webnovel.id.in(contentIds),
+                        isNotDeleted(),
+                        isPublished()
+                )
+                .orderBy(webnovelEpisode.episodeNum.desc())
+                .fetch()
+                .stream()
+                .filter(t -> t.get(webnovelEpisode.webnovel.id) != null)
+                .collect(Collectors.groupingBy(
+                        t -> Objects.requireNonNull(t.get(webnovelEpisode.webnovel.id)),
+                        Collectors.mapping(
+                                t -> new EpisodeSummaryResponse(
+                                        t.get(webnovelEpisode.id),
+                                        t.get(webnovelEpisode.episodeNum),
+                                        t.get(webnovelEpisode.episodeTitle),
+                                        t.get(webnovelEpisode.publishedAt),
+                                        t.get(webnovelEpisode.purchasePrice),
+                                        null
+                                ),
+                                Collectors.toList()
+                        )
+                ));
+
     }
 
     private OrderSpecifier<?> getEpisodeOrder(String sort) {

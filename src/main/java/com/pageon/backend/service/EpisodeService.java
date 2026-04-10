@@ -13,7 +13,9 @@ import com.pageon.backend.service.provider.EpisodeProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,11 +32,19 @@ public class EpisodeService {
     private final UserRepository userRepository;
     private final IdempotentService idempotentService;
     private final EpisodePurchaseRepository episodePurchaseRepository;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     public Page<EpisodeSummaryResponse> getEpisodeSummaries(Long userId, String contentType, Long contentId, String sort, Pageable pageable) {
         EpisodeProvider provider = getProvider(contentType);
-        Page<EpisodeSummaryResponse> episodes = provider.findEpisodeSummaries(contentId, sort, pageable);
+        List<EpisodeSummaryResponse> cached = (List<EpisodeSummaryResponse>) redisTemplate.opsForValue().get("episodes:summaries:" + contentId);
 
+        Page<EpisodeSummaryResponse> episodes;
+
+        if (cached != null) {
+            episodes = new PageImpl<>(cached, pageable, cached.size());
+        } else {
+            episodes = provider.findEpisodeSummaries(contentId, sort, pageable);
+        }
 
         if (userId != null && !episodes.isEmpty()) {
             Map<Long, EpisodePurchaseResponse> purchaseMap = getPurchaseMap(userId, contentId);
