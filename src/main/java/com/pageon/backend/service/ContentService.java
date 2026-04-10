@@ -71,6 +71,7 @@ public class ContentService {
             content = contentRepository.findContentDetail(contentId).orElseThrow(
                     () -> new CustomException(ErrorCode.CONTENT_NOT_FOUND)
             );
+            log.info("content DB 조회");
         }
 
         Boolean isInterested = (userId != null) && interestRepository.existsByUser_IdAndContentId(userId, contentId);

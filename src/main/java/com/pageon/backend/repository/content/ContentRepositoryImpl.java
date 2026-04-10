@@ -2,6 +2,7 @@ package com.pageon.backend.repository.content;
 
 import com.pageon.backend.common.enums.ContentType;
 import com.pageon.backend.common.enums.SerialDay;
+import com.pageon.backend.common.enums.SeriesStatus;
 import com.pageon.backend.common.enums.WorkStatus;
 import com.pageon.backend.dto.response.content.ContentDetailResponse;
 import com.pageon.backend.dto.response.content.KeywordResponse;
@@ -31,6 +32,10 @@ public class ContentRepositoryImpl implements ContentRepositoryCustom {
     }
     private BooleanExpression isPublished() {
         return content.workStatus.eq(WorkStatus.PUBLISHED);
+    }
+
+    private BooleanExpression isOngoing() {
+        return content.status.eq(SeriesStatus.ONGOING);
     }
 
     @Override
@@ -96,6 +101,7 @@ public class ContentRepositoryImpl implements ContentRepositoryCustom {
                 .where(
                         content.serialDay.eq(serialDay),
                         isNotDeleted(),
+                        isOngoing(),
                         isPublished()
                 )
                 .orderBy(content.viewCount.desc())

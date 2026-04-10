@@ -42,8 +42,10 @@ public class EpisodeService {
 
         if (cached != null) {
             episodes = new PageImpl<>(cached, pageable, cached.size());
+            log.info("episodes 캐시 조회");
         } else {
             episodes = provider.findEpisodeSummaries(contentId, sort, pageable);
+            log.info("episodes DB 조회");
         }
 
         if (userId != null && !episodes.isEmpty()) {
