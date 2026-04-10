@@ -4,7 +4,7 @@ import com.pageon.backend.common.annotation.ExecutionTimer;
 import com.pageon.backend.common.enums.SerialDay;
 import com.pageon.backend.common.utils.PageableUtil;
 import com.pageon.backend.service.ActionLogService;
-import com.pageon.backend.service.ContentCacheService;
+import com.pageon.backend.service.cache.ContentCacheService;
 import com.pageon.backend.service.RankingService;
 import com.pageon.backend.service.creator.EpisodePublishService;
 import lombok.RequiredArgsConstructor;
@@ -70,6 +70,12 @@ public class ContentScheduler {
         contentCacheService.refreshNewContents("webnovels", pageable, baseline);
         contentCacheService.refreshNewContents("webtoons", pageable, baseline);
 
+    }
+
+    @ExecutionTimer
+    @Scheduled(cron = "0 50 23 * * *")
+    public void updateContentDetail() {
+        contentCacheService.warmUpContentDetailBySerialDay();
     }
 
     @ExecutionTimer

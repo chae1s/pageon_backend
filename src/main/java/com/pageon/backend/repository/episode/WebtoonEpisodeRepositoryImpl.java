@@ -12,7 +12,10 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static com.pageon.backend.entity.QWebtoonEpisode.webtoonEpisode;
 
@@ -62,6 +65,45 @@ public class WebtoonEpisodeRepositoryImpl implements WebtoonEpisodeRepositoryCus
         ).orElse(0L);
 
         return new PageImpl<>(responses, pageable, total);
+    }
+
+    @Override
+    public Map<Long, List<EpisodeSummaryResponse>> findEpisodeSummariesByContentIds(List<Long> contentIds) {
+        return queryFactory
+                .select(
+                        webtoonEpisode.webtoon.id,
+                        webtoonEpisode.id,
+                        webtoonEpisode.episodeNum,
+                        webtoonEpisode.episodeTitle,
+                        webtoonEpisode.publishedAt,
+                        webtoonEpisode.purchasePrice,
+                        webtoonEpisode.rentalPrice
+                )
+                .from(webtoonEpisode)
+                .where(
+                        webtoonEpisode.webtoon.id.in(contentIds),
+                        isNotDeleted(),
+                        isPublished()
+                )
+                .orderBy(webtoonEpisode.episodeNum.desc())
+                .fetch()
+                .stream()
+                .filter(t -> t.get(webtoonEpisode.webtoon.id) != null)
+                .collect(Collectors.groupingBy(
+                        t -> Objects.requireNonNull(t.get(webtoonEpisode.webtoon.id)),
+                        Collectors.mapping(
+                                t -> new EpisodeSummaryResponse(
+                                        t.get(webtoonEpisode.id),
+                                        t.get(webtoonEpisode.episodeNum),
+                                        t.get(webtoonEpisode.episodeTitle),
+                                        t.get(webtoonEpisode.publishedAt),
+                                        t.get(webtoonEpisode.purchasePrice),
+                                        t.get(webtoonEpisode.rentalPrice)
+                                ),
+                                Collectors.toList()
+                        )
+                ));
+
     }
 
     private OrderSpecifier<?> getEpisodeOrder(String sort) {

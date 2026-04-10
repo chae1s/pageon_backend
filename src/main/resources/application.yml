@@ -90,7 +90,7 @@ spring:
     port: 587
   data:
     redis:
-      host: localhost
+      host: 52.79.176.106
       port: 6379
   profiles:
     active: dev

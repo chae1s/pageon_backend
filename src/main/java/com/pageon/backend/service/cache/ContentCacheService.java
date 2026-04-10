@@ -1,8 +1,11 @@
-package com.pageon.backend.service;
+package com.pageon.backend.service.cache;
 
+import com.pageon.backend.common.enums.ContentType;
 import com.pageon.backend.common.enums.SerialDay;
 import com.pageon.backend.dto.response.ContentResponse;
 import com.pageon.backend.dto.response.PageResponse;
+import com.pageon.backend.dto.response.content.ContentDetailResponse;
+import com.pageon.backend.dto.response.episode.EpisodeSummaryResponse;
 import com.pageon.backend.entity.*;
 import com.pageon.backend.exception.CustomException;
 import com.pageon.backend.exception.ErrorCode;
@@ -10,17 +13,23 @@ import com.pageon.backend.repository.content.ContentRepository;
 import com.pageon.backend.repository.KeywordRepository;
 import com.pageon.backend.repository.WebnovelRepository;
 import com.pageon.backend.repository.WebtoonRepository;
+import com.pageon.backend.repository.episode.WebnovelEpisodeRepository;
+import com.pageon.backend.repository.episode.WebtoonEpisodeRepository;
 import com.pageon.backend.service.provider.ContentProvider;
+import com.pageon.backend.service.provider.EpisodeProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -29,10 +38,11 @@ import java.util.stream.Collectors;
 public class ContentCacheService {
 
     private final ContentRepository contentRepository;
-    private final WebnovelRepository webnovelRepository;
-    private final WebtoonRepository webtoonRepository;
     private final KeywordRepository keywordRepository;
     private final List<ContentProvider> providers;
+    private final WebnovelEpisodeRepository webnovelEpisodeRepository;
+    private final WebtoonEpisodeRepository webtoonEpisodeRepository;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     @CachePut(value = "contents:daily", key = "#contentType + ':' + #serialDay")
     public List<ContentResponse.Simple> refreshDailyContents(String contentType, Pageable pageable, SerialDay serialDay) {
@@ -94,18 +104,50 @@ public class ContentCacheService {
                 .collect(Collectors.toList());
     }
 
-    @CachePut(value = "contents:new", key = "'webntoons:' + #date")
-    public List<ContentResponse.Simple> refreshNewWebtoons(Pageable pageable, LocalDate date) {
 
-        log.info("Redis cache WARM-UP starting for new webtoons (Target: 6 items)");
-        LocalDateTime since = date.minusDays(180).atStartOfDay();
+    public void warmUpContentDetailBySerialDay() {
+        String today = LocalDate.now().plusDays(1).getDayOfWeek().name();
+        SerialDay serialDay = SerialDay.valueOf(today);
 
-        Page<Webtoon> webtoons = webtoonRepository.findAllNewArrivals(since, pageable);
+        List<ContentDetailResponse> contents = contentRepository.findContentDetails(serialDay);
 
-        log.info("Successfully prepared 6 new webtoons for cache update.");
-        return webtoons.stream()
-                .map(ContentResponse.Simple::fromEntity)
-                .collect(Collectors.toList());
+        contents.forEach(content ->
+                redisTemplate.opsForValue().set(
+                    "contents:detail:" + content.getContentId(),
+                    content,
+                    Duration.ofHours(24)
+                )
+        );
+
+        List<Long> webnovelIds = contents.stream()
+                .filter(c -> c.getContentType().equals(ContentType.WEBNOVEL))
+                .map(ContentDetailResponse::getContentId)
+                .toList();
+
+        List<Long> webtoonIds = contents.stream()
+                .filter(c -> c.getContentType().equals(ContentType.WEBTOON))
+                .map(ContentDetailResponse::getContentId)
+                .toList();
+
+        Map<Long, List<EpisodeSummaryResponse>> webnovelEpisodeMap = webnovelEpisodeRepository.findEpisodeSummariesByContentIds(webnovelIds);
+        Map<Long, List<EpisodeSummaryResponse>> webtoonEpisodeMap = webtoonEpisodeRepository.findEpisodeSummariesByContentIds(webtoonIds);
+
+        webnovelEpisodeMap.forEach((contentId, episodes) ->
+                redisTemplate.opsForValue().set(
+                        "episodes:summaries:" + contentId,
+                        episodes,
+                        Duration.ofHours(24)
+                )
+        );
+
+        webtoonEpisodeMap.forEach((contentId, episodes) ->
+                redisTemplate.opsForValue().set(
+                        "episodes:summaries:" + contentId,
+                        episodes,
+                        Duration.ofHours(24)
+                )
+        );
+
     }
 
     private ContentProvider getProvider(String contentType) {
