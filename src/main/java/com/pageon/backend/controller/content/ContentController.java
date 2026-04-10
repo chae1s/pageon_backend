@@ -2,6 +2,7 @@ package com.pageon.backend.controller.content;
 
 import com.pageon.backend.dto.response.ContentResponse;
 import com.pageon.backend.dto.response.PageResponse;
+import com.pageon.backend.dto.response.content.ContentDetailResponse;
 import com.pageon.backend.security.PrincipalUser;
 import com.pageon.backend.service.ContentService;
 import com.pageon.backend.service.RankingService;
@@ -28,7 +29,7 @@ public class ContentController {
     private final ContentService contentService;
     private final RankingService rankingService;
 
-    @GetMapping("/{contentId:\\d+}")
+    /*@GetMapping("/{contentId:\\d+}")
     public ResponseEntity<ContentResponse.Detail> getContentDetail(
             @AuthenticationPrincipal PrincipalUser principalUser,
             @PathVariable String contentType,
@@ -38,6 +39,19 @@ public class ContentController {
         ContentResponse.Detail detail = contentService.getContentDetail(principalUser, contentType, contentId);
 
         return ResponseEntity.ok().body(detail);
+    }*/
+
+    @GetMapping("/{contentId:\\d+}")
+    public ResponseEntity<ContentDetailResponse> getContentDetail(
+            @AuthenticationPrincipal PrincipalUser principalUser,
+            @PathVariable String contentType,
+            @PathVariable Long contentId
+    ) {
+        Long userId = (principalUser != null) ? principalUser.getId() : null;
+
+        ContentDetailResponse content = contentService.getContentDetail(userId, contentId);
+
+        return ResponseEntity.ok().body(content);
     }
 
     @GetMapping(params = "keyword")

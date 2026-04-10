@@ -5,6 +5,8 @@ import com.pageon.backend.common.enums.SerialDay;
 import com.pageon.backend.dto.response.EpisodeResponse;
 import com.pageon.backend.entity.*;
 import com.pageon.backend.repository.*;
+import com.pageon.backend.repository.WebtoonRepository;
+import com.pageon.backend.repository.episode.WebtoonEpisodeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -13,7 +15,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;

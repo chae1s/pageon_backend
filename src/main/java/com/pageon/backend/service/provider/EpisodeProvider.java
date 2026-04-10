@@ -4,6 +4,7 @@ import com.pageon.backend.common.enums.EpisodeStatus;
 import com.pageon.backend.common.enums.PurchaseType;
 import com.pageon.backend.dto.response.CommentResponse;
 import com.pageon.backend.dto.response.creator.episode.EpisodeList;
+import com.pageon.backend.dto.response.episode.EpisodeSummaryResponse;
 import com.pageon.backend.entity.User;
 import com.pageon.backend.entity.base.EpisodeBase;
 import com.pageon.backend.entity.base.EpisodeCommentBase;
@@ -17,6 +18,8 @@ import java.util.Set;
 
 public interface EpisodeProvider {
     boolean supports(String contentType);
+
+    Page<EpisodeSummaryResponse> findEpisodeSummaries(Long contentId, String sort, Pageable pageable);
 
     Object findEpisodeDetail(Long userId, Long episodeId);
 

@@ -1,12 +1,16 @@
 package com.pageon.backend.service;
 
+import com.pageon.backend.common.enums.ContentType;
 import com.pageon.backend.common.enums.SerialDay;
 import com.pageon.backend.dto.response.ContentResponse;
+import com.pageon.backend.dto.response.content.ContentDetailResponse;
 import com.pageon.backend.entity.*;
 import com.pageon.backend.exception.CustomException;
 import com.pageon.backend.exception.ErrorCode;
 import com.pageon.backend.repository.*;
+import com.pageon.backend.repository.content.ContentRepository;
 import com.pageon.backend.security.PrincipalUser;
+import com.pageon.backend.service.handler.EpisodeActionHandler;
 import com.pageon.backend.service.provider.ContentProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -20,7 +24,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -51,6 +54,8 @@ class ContentServiceTest {
     private ContentRepository contentRepository;
     @Mock
     private ReadingHistoryRepository readingHistoryRepository;
+    @Mock
+    private EpisodeActionHandler actionHandler;
 
     @BeforeEach
     void setUp() {
@@ -120,6 +125,73 @@ class ContentServiceTest {
         assertFalse(result.getIsInterested());
         verify(interestRepository, never()).existsByUser_IdAndContentId(any(), any());
 
+    }
+
+    @Test
+    @DisplayName("콘텐츠 상세 조회 성공 - 로그인 유저")
+    void getContentDetail_withLoggedInUser_shouldReturnDetail() {
+        // given
+        ContentDetailResponse contentDetail = mock(ContentDetailResponse.class);
+
+        when(contentRepository.findContentDetail(1L)).thenReturn(Optional.of(contentDetail));
+        when(interestRepository.existsByUser_IdAndContentId(1L, 1L)).thenReturn(true);
+
+        // when
+        ContentDetailResponse result = contentService.getContentDetail(1L, 1L);
+
+        // then
+        assertNotNull(result);
+        verify(contentRepository).findContentDetail(1L);
+        verify(interestRepository).existsByUser_IdAndContentId(1L, 1L);
+        verify(contentDetail).setIsInterested(true);
+    }
+
+    @Test
+    @DisplayName("콘텐츠 상세 조회 성공 - 비로그인 유저")
+    void getContentDetail_withNullUserId_shouldSetIsInterestedFalse() {
+        // given
+        ContentDetailResponse contentDetail = mock(ContentDetailResponse.class);
+
+        when(contentRepository.findContentDetail(1L)).thenReturn(Optional.of(contentDetail));
+
+        // when
+        ContentDetailResponse result = contentService.getContentDetail(null, 1L);
+
+        // then
+        assertNotNull(result);
+        verify(interestRepository, never())
+                .existsByUser_IdAndContentId(any(), any());
+        verify(contentDetail).setIsInterested(false);
+    }
+
+    @Test
+    @DisplayName("관심 없는 콘텐츠면 isInterested false")
+    void getContentDetail_withNotInterestedUser_shouldSetIsInterestedFalse() {
+        // given
+        ContentDetailResponse contentDetail = mock(ContentDetailResponse.class);
+
+        when(contentRepository.findContentDetail(1L)).thenReturn(Optional.of(contentDetail));
+        when(interestRepository.existsByUser_IdAndContentId(1L, 1L)).thenReturn(false);
+
+        // when
+        contentService.getContentDetail(1L, 1L);
+
+        // then
+        verify(contentDetail).setIsInterested(false);
+    }
+
+    @Test
+    @DisplayName("콘텐츠가 없으면 CustomException 발생")
+    void getContentDetail_whenContentNotFound_shouldThrowCustomException() {
+        // given
+        when(contentRepository.findContentDetail(1L)).thenReturn(Optional.empty());
+
+        // when & then
+        CustomException exception = assertThrows(CustomException.class,
+                () -> contentService.getContentDetail(1L, 1L));
+
+        assertEquals(ErrorCode.CONTENT_NOT_FOUND, ErrorCode.valueOf(exception.getErrorCode()));
+        verify(interestRepository, never()).existsByUser_IdAndContentId(any(), any());
     }
 
     @Test
@@ -393,6 +465,8 @@ class ContentServiceTest {
         User user = mock(User.class);
         Content content = mock(Content.class);
 
+        when(content.getDtype()).thenReturn("WEBNOVEL");
+
         when(interestRepository.findByUser_IdAndContentId(1L, 1L)).thenReturn(Optional.empty());
         when(userRepository.findByIdAndDeletedAtIsNull(1L)).thenReturn(Optional.of(user));
         when(contentRepository.findByIdAndDeletedAtIsNull(1L)).thenReturn(Optional.of(content));
@@ -402,6 +476,8 @@ class ContentServiceTest {
 
         // then
         verify(interestRepository).save(any(Interest.class));
+        verify(actionHandler).handleInterestContent(
+                eq(1L), eq(1L), eq(ContentType.WEBNOVEL));
     }
 
     @Test
@@ -409,7 +485,9 @@ class ContentServiceTest {
     void toggleInterest_whenExistInterest_shouldDeleteInterest() {
         // given
         Interest interest = mock(Interest.class);
+        Content content = mock(Content.class);
 
+        when(contentRepository.findByIdAndDeletedAtIsNull(1L)).thenReturn(Optional.of(content));
         when(interestRepository.findByUser_IdAndContentId(1L, 1L)).thenReturn(Optional.of(interest));
 
         //when
@@ -481,7 +559,7 @@ class ContentServiceTest {
         when(content.getCreator()).thenReturn(creator);
         when(creator.getPenName()).thenReturn("penName");
 
-        SerialDay today = SerialDay.MONDAY;
+        SerialDay today = SerialDay.valueOf(LocalDate.now().getDayOfWeek().name());
 
         when(readingHistoryRepository.findWithContentByUserIdAndSerialDay(eq(1L), eq(today)))
                 .thenReturn(List.of(history));

@@ -11,11 +11,13 @@ import com.pageon.backend.dto.response.PageResponse;
 import com.pageon.backend.dto.response.creator.episode.*;
 import com.pageon.backend.dto.response.episode.EpisodeImage;
 import com.pageon.backend.entity.*;
-import com.pageon.backend.entity.base.EpisodeBase;
 import com.pageon.backend.exception.CustomException;
 import com.pageon.backend.exception.ErrorCode;
 import com.pageon.backend.repository.*;
-import com.pageon.backend.service.kafka.NotificationEventProducer;
+import com.pageon.backend.repository.content.ContentRepository;
+import com.pageon.backend.repository.episode.WebnovelEpisodeRepository;
+import com.pageon.backend.repository.WebtoonRepository;
+import com.pageon.backend.repository.episode.WebtoonEpisodeRepository;
 import com.pageon.backend.service.provider.EpisodeProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +27,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 

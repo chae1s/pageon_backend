@@ -7,10 +7,12 @@ import com.pageon.backend.common.utils.PageableUtil;
 import com.pageon.backend.dto.response.ContentResponse;
 import com.pageon.backend.dto.response.EpisodeResponse;
 import com.pageon.backend.dto.response.PageResponse;
+import com.pageon.backend.dto.response.content.ContentDetailResponse;
 import com.pageon.backend.entity.*;
 import com.pageon.backend.exception.CustomException;
 import com.pageon.backend.exception.ErrorCode;
 import com.pageon.backend.repository.*;
+import com.pageon.backend.repository.content.ContentRepository;
 import com.pageon.backend.security.PrincipalUser;
 import com.pageon.backend.service.handler.EpisodeActionHandler;
 import com.pageon.backend.service.provider.ContentProvider;
@@ -57,6 +59,19 @@ public class ContentService {
 
         log.info("Successfully retrieved {}: {} (ID: {})", contentType, content.getTitle(), contentId);
         return ContentResponse.Detail.fromEntity(content, episodes, isInterested);
+    }
+
+    public ContentDetailResponse getContentDetail(Long userId, Long contentId) {
+
+        ContentDetailResponse content = contentRepository.findContentDetail(contentId).orElseThrow(
+                () -> new CustomException(ErrorCode.CONTENT_NOT_FOUND)
+        );
+
+        Boolean isInterested = (userId != null) && interestRepository.existsByUser_IdAndContentId(userId, contentId);
+
+        content.setIsInterested(isInterested);
+
+        return content;
     }
 
     @Transactional(readOnly = true)

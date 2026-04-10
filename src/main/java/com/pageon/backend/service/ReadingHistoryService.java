@@ -1,24 +1,18 @@
 package com.pageon.backend.service;
 
-import com.pageon.backend.common.enums.SerialDay;
-import com.pageon.backend.common.utils.PageableUtil;
-import com.pageon.backend.dto.response.ContentResponse;
 import com.pageon.backend.entity.Content;
 import com.pageon.backend.entity.ReadingHistory;
 import com.pageon.backend.entity.User;
 import com.pageon.backend.exception.CustomException;
 import com.pageon.backend.exception.ErrorCode;
 import com.pageon.backend.repository.*;
+import com.pageon.backend.repository.content.ContentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Slf4j
 @Service

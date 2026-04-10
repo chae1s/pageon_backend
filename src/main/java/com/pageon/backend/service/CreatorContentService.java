@@ -15,7 +15,7 @@ import com.pageon.backend.entity.*;
 import com.pageon.backend.exception.CustomException;
 import com.pageon.backend.exception.ErrorCode;
 import com.pageon.backend.repository.ContentDeletionRequestRepository;
-import com.pageon.backend.repository.ContentRepository;
+import com.pageon.backend.repository.content.ContentRepository;
 import com.pageon.backend.repository.CreatorRepository;
 import com.pageon.backend.service.provider.EpisodeProvider;
 import lombok.RequiredArgsConstructor;

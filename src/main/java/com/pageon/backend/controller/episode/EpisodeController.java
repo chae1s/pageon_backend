@@ -4,6 +4,7 @@ import com.pageon.backend.common.enums.PurchaseType;
 import com.pageon.backend.dto.request.EpisodeCommentRequest;
 import com.pageon.backend.dto.request.EpisodeRatingRequest;
 import com.pageon.backend.dto.response.*;
+import com.pageon.backend.dto.response.episode.EpisodeSummaryResponse;
 import com.pageon.backend.security.PrincipalUser;
 import com.pageon.backend.service.EpisodeCommentService;
 import com.pageon.backend.service.EpisodePurchaseService;
@@ -26,6 +27,20 @@ public class EpisodeController {
     private final EpisodeCommentService episodeCommentService;
     private final EpisodePurchaseService episodePurchaseService;
 
+    @GetMapping()
+    public ResponseEntity<PageResponse<EpisodeSummaryResponse>> getEpisodeSummaries(
+            @AuthenticationPrincipal PrincipalUser principalUser,
+            @PathVariable String contentType,
+            @PathVariable Long contentId,
+            @RequestParam("sort") String sort,
+            @PageableDefault(size = 20) Pageable pageable
+    ) {
+        Long userId = (principalUser != null) ? principalUser.getId() : null;
+
+        Page<EpisodeSummaryResponse> episodes = episodeService.getEpisodeSummaries(userId, contentType, contentId, sort, pageable);
+
+        return ResponseEntity.ok(new PageResponse<>(episodes));
+    }
 
     @GetMapping("/{episodeId}")
     public ResponseEntity<Object> getEpisodeDetail(

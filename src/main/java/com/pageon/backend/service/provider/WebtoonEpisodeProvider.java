@@ -7,11 +7,13 @@ import com.pageon.backend.dto.response.CommentResponse;
 import com.pageon.backend.dto.response.EpisodeResponse;
 import com.pageon.backend.dto.response.creator.episode.EpisodeList;
 import com.pageon.backend.dto.response.episode.EpisodeImage;
+import com.pageon.backend.dto.response.episode.EpisodeSummaryResponse;
 import com.pageon.backend.entity.*;
 import com.pageon.backend.entity.base.EpisodeCommentBase;
 import com.pageon.backend.exception.CustomException;
 import com.pageon.backend.exception.ErrorCode;
 import com.pageon.backend.repository.*;
+import com.pageon.backend.repository.episode.WebtoonEpisodeRepository;
 import com.pageon.backend.service.EpisodePurchaseService;
 import com.pageon.backend.service.WebtoonImageService;
 import com.pageon.backend.service.handler.EpisodeActionHandler;
@@ -41,6 +43,11 @@ public class WebtoonEpisodeProvider implements EpisodeProvider {
     @Override
     public boolean supports(String contentType) {
         return "webtoons".equals(contentType);
+    }
+
+    @Override
+    public Page<EpisodeSummaryResponse> findEpisodeSummaries(Long contentId, String sort, Pageable pageable) {
+        return webtoonEpisodeRepository.findEpisodeSummaries(contentId, sort, pageable);
     }
 
     @Override

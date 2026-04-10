@@ -1,4 +1,4 @@
-package com.pageon.backend.repository;
+package com.pageon.backend.repository.episode;
 
 import com.pageon.backend.common.enums.EpisodeStatus;
 import com.pageon.backend.dto.response.creator.episode.EpisodeList;
@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-public interface WebnovelEpisodeRepository extends JpaRepository<WebnovelEpisode, Long> {
+public interface WebnovelEpisodeRepository extends JpaRepository<WebnovelEpisode, Long>, WebnovelEpisodeRepositoryCustom {
 
     List<WebnovelEpisode> findByWebnovelIdAndEpisodeStatus(Long id, EpisodeStatus episodeStatus);
 

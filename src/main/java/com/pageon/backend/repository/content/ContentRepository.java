@@ -1,4 +1,4 @@
-package com.pageon.backend.repository;
+package com.pageon.backend.repository.content;
 
 import com.pageon.backend.common.enums.SeriesStatus;
 import com.pageon.backend.dto.response.creator.content.ContentPerformanceStats;
@@ -13,11 +13,10 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-public interface ContentRepository extends JpaRepository<Content, Long> {
+public interface ContentRepository extends JpaRepository<Content, Long>, ContentRepositoryCustom {
 
     Optional<Content> findByIdAndDeletedAtIsNull(Long id);
 

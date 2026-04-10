@@ -1,7 +1,5 @@
 package com.pageon.backend.service;
 
-import com.pageon.backend.dto.oauth.KakaoSignupRequest;
-import com.pageon.backend.dto.oauth.OAuthUserInfoResponse;
 import com.pageon.backend.dto.request.*;
 import com.pageon.backend.dto.response.JwtTokenResponse;
 import com.pageon.backend.dto.response.UserInfoResponse;
@@ -874,7 +872,7 @@ public class UserServiceTest {
 
         assertNotNull(user.getDeletedAt());
 
-        verify(redisTemplate).delete("sample-refresh-token");
+        verify(redisTemplate).delete(redisKey);
     }
 
     @Test

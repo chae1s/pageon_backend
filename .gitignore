@@ -176,5 +176,8 @@ application-dev.yml
 application-prod.yml
 **/resources/keys/*.pem
 
+# QueryDSL #
+/src/main/generated
+
 
 # End of https://www.toptal.com/developers/gitignore/api/java,intellij+all,gradle.env

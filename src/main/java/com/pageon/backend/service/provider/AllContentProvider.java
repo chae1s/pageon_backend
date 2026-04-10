@@ -6,7 +6,7 @@ import com.pageon.backend.entity.Content;
 import com.pageon.backend.entity.ContentRanking;
 import com.pageon.backend.entity.Interest;
 import com.pageon.backend.entity.ReadingHistory;
-import com.pageon.backend.repository.ContentRepository;
+import com.pageon.backend.repository.content.ContentRepository;
 import com.pageon.backend.repository.InterestRepository;
 import com.pageon.backend.repository.RankingRepository;
 import com.pageon.backend.repository.ReadingHistoryRepository;

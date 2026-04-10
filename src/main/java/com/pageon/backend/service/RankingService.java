@@ -2,32 +2,22 @@ package com.pageon.backend.service;
 
 import com.pageon.backend.common.annotation.ExecutionTimer;
 import com.pageon.backend.common.enums.ContentType;
-import com.pageon.backend.dto.response.ActionCountResponse;
 import com.pageon.backend.dto.response.ContentResponse;
 import com.pageon.backend.entity.Content;
-import com.pageon.backend.entity.ContentActionLog;
 import com.pageon.backend.entity.ContentRanking;
-import com.pageon.backend.exception.CustomException;
-import com.pageon.backend.exception.ErrorCode;
-import com.pageon.backend.repository.ActionLogRepository;
-import com.pageon.backend.repository.ContentRepository;
+import com.pageon.backend.repository.content.ContentRepository;
 import com.pageon.backend.repository.RankingRepository;
-import com.pageon.backend.service.provider.ContentProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CachePut;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StopWatch;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j

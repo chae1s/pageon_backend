@@ -1,8 +1,7 @@
-package com.pageon.backend.repository;
+package com.pageon.backend.repository.episode;
 
 import com.pageon.backend.common.enums.EpisodeStatus;
 import com.pageon.backend.dto.response.creator.episode.EpisodeList;
-import com.pageon.backend.entity.WebnovelEpisode;
 import com.pageon.backend.entity.WebtoonEpisode;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,7 +16,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-public interface WebtoonEpisodeRepository extends JpaRepository<WebtoonEpisode, Long> {
+public interface WebtoonEpisodeRepository extends JpaRepository<WebtoonEpisode, Long>, WebtoonEpisodeRepositoryCustom {
 
 
     List<WebtoonEpisode> findByWebtoonIdAndEpisodeStatus(Long id, EpisodeStatus episodeStatus);

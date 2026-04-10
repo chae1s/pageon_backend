@@ -6,11 +6,13 @@ import com.pageon.backend.common.enums.PurchaseType;
 import com.pageon.backend.dto.response.CommentResponse;
 import com.pageon.backend.dto.response.EpisodeResponse;
 import com.pageon.backend.dto.response.creator.episode.EpisodeList;
+import com.pageon.backend.dto.response.episode.EpisodeSummaryResponse;
 import com.pageon.backend.entity.*;
 import com.pageon.backend.entity.base.EpisodeCommentBase;
 import com.pageon.backend.exception.CustomException;
 import com.pageon.backend.exception.ErrorCode;
 import com.pageon.backend.repository.*;
+import com.pageon.backend.repository.episode.WebnovelEpisodeRepository;
 import com.pageon.backend.service.EpisodePurchaseService;
 import com.pageon.backend.service.handler.EpisodeActionHandler;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +40,11 @@ public class WebnovelEpisodeProvider implements EpisodeProvider {
     @Override
     public boolean supports(String contentType) {
         return "webnovels".equals(contentType);
+    }
+
+    @Override
+    public Page<EpisodeSummaryResponse> findEpisodeSummaries(Long contentId, String sort, Pageable pageable) {
+        return webnovelEpisodeRepository.findEpisodeSummaries(contentId, sort, pageable);
     }
 
     @Override
