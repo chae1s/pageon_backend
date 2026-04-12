@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @Builder
 @DynamicUpdate
 @Table(name = "episode_purchases", indexes = {
-        @Index(name = "idx_user_content_episode", columnList = "user_id, content_id, episode_id")
+        @Index(name = "idx_user_episode_covering", columnList = "user_id, episode_id, purchase_type, expired_at")
 })
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor

@@ -29,6 +29,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -65,20 +66,31 @@ public class ContentService {
 
     public ContentDetailResponse getContentDetail(Long userId, Long contentId) {
 
-        ContentDetailResponse content = (ContentDetailResponse) redisTemplate.opsForValue().get("contents:detail:" + contentId);
+        CompletableFuture<ContentDetailResponse> contentFuture = CompletableFuture.supplyAsync(() -> {
+            ContentDetailResponse content = (ContentDetailResponse) redisTemplate.opsForValue().get("contents:detail:" + contentId);
 
-        if (content == null) {
-            content = contentRepository.findContentDetail(contentId).orElseThrow(
-                    () -> new CustomException(ErrorCode.CONTENT_NOT_FOUND)
-            );
-            log.info("content DB 조회");
+            if (content == null) {
+                log.info("content db 조회");
+                return contentRepository.findContentDetail(contentId).orElseThrow(
+                        () -> new CustomException(ErrorCode.CONTENT_NOT_FOUND)
+                );
+            }
+            log.info("content 캐시 조회");
+            return content;
+        });
+
+        if (userId == null) {
+            return contentFuture.join();
         }
 
-        Boolean isInterested = (userId != null) && interestRepository.existsByUser_IdAndContentId(userId, contentId);
+        CompletableFuture<Boolean> interestFuture = CompletableFuture.supplyAsync(
+                () -> interestRepository.existsByUser_IdAndContentId(userId, contentId)
+        );
 
-        content.setIsInterested(isInterested);
-
-        return content;
+        return contentFuture.thenCombine(interestFuture, (content, isInterested) -> {
+            content.setIsInterested(isInterested);
+            return content;
+        }).join();
     }
 
     @Transactional(readOnly = true)

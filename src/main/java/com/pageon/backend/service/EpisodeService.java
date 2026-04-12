@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -36,32 +37,41 @@ public class EpisodeService {
 
     public Page<EpisodeSummaryResponse> getEpisodeSummaries(Long userId, String contentType, Long contentId, String sort, Pageable pageable) {
         EpisodeProvider provider = getProvider(contentType);
-        List<EpisodeSummaryResponse> cached = (List<EpisodeSummaryResponse>) redisTemplate.opsForValue().get("episodes:summaries:" + contentId);
 
-        Page<EpisodeSummaryResponse> episodes;
+        CompletableFuture<Page<EpisodeSummaryResponse>> episodeFuture = CompletableFuture.supplyAsync(() -> {
+            List<EpisodeSummaryResponse> cached = (List<EpisodeSummaryResponse>) redisTemplate.opsForValue().get("episodes:summaries:" + contentId);
 
-        if (cached != null) {
-            episodes = new PageImpl<>(cached, pageable, cached.size());
-            log.info("episodes 캐시 조회");
-        } else {
-            episodes = provider.findEpisodeSummaries(contentId, sort, pageable);
-            log.info("episodes DB 조회");
+            if (cached != null) {
+                return new PageImpl<>(cached, pageable, cached.size());
+            }
+
+            return provider.findEpisodeSummaries(contentId, sort, pageable);
+        });
+
+        if (userId == null) {
+            return episodeFuture.join();
         }
 
-        List<Long> episodeIds = episodes.stream().map(EpisodeSummaryResponse::getEpisodeId).toList();
+        return episodeFuture.thenCompose(episodes -> {
+            if (episodes.isEmpty()) {
+                return CompletableFuture.completedFuture(episodes);
+            }
 
-        if (userId != null && !episodes.isEmpty()) {
-            Map<Long, EpisodePurchaseResponse> purchaseMap = getPurchaseMap(userId, episodeIds);
+            List<Long> episodeIds = episodes.stream().map(EpisodeSummaryResponse::getEpisodeId).toList();
 
-            episodes.forEach(episode -> {
-                EpisodePurchaseResponse purchaseResponse = purchaseMap.get(episode.getEpisodeId());
-                if (purchaseResponse != null) {
-                    episode.setEpisodePurchase(purchaseResponse);
-                }
-            });
-        }
+            return CompletableFuture.supplyAsync(() -> getPurchaseMap(userId, episodeIds))
+                    .thenApply(purchaseMap -> {
+                        episodes.forEach(episode -> {
+                            EpisodePurchaseResponse purchaseResponse = purchaseMap.get(episode.getEpisodeId());
+                            if (purchaseResponse != null) {
+                                episode.setEpisodePurchase(purchaseResponse);
+                            }
+                        });
 
-        return episodes;
+                        return episodes;
+                    });
+        }).join();
+
     }
 
     private Map<Long, EpisodePurchaseResponse> getPurchaseMap(Long userId, List<Long> episodeIds) {
