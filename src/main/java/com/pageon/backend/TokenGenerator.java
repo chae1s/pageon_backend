@@ -2,18 +2,13 @@ package com.pageon.backend;
 
 import com.pageon.backend.common.enums.RoleType;
 import com.pageon.backend.security.JwtProvider;
-import io.jsonwebtoken.io.Decoders;
-import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.security.Key;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -40,8 +35,8 @@ public class TokenGenerator {
 
             JwtProvider jwtProvider = new JwtProvider(refresh, access);
 
-            for (int i = 1; i <= 100000; i++) {
-                String email = "pageon" + i + "@mail.com";
+            for (int i = 1; i <= 50000; i++) {
+                String email = "user" + i + "@mail.com";
                 String accessToken = jwtProvider.generateAccessToken((long)i -1, email, roleTypes);
                 writer.write(email + ",\"" + accessToken + "\"\n");
 
