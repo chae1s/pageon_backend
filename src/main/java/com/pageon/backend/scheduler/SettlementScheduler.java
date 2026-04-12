@@ -14,7 +14,7 @@ public class SettlementScheduler {
 
     private final CreatorSettlementService creatorSettlementService;
 
-    @Scheduled(cron = "0 45 16 * * *")
+    @Scheduled(cron = "0 0 2 1 * *", zone = "Asia/Seoul")
     public void runSettlement() {
         LocalDateTime scheduledAt = LocalDateTime.now()
                 .withDayOfMonth(1)
@@ -29,7 +29,7 @@ public class SettlementScheduler {
     }
 
     @ExecutionTimer
-    @Scheduled(cron = "0 48 16 * * *")
+    @Scheduled(cron = "0 0 2 10 * *", zone = "Asia/Seoul")
     public void runPayout() {
         LocalDateTime payoutDate = LocalDateTime.now()
                 .withDayOfMonth(10)
