@@ -63,45 +63,6 @@ public class WebnovelEpisodeRepositoryImpl implements WebnovelEpisodeRepositoryC
         return new PageImpl<>(responses, pageable, total);
     }
 
-    @Override
-    public Map<Long, List<EpisodeSummaryResponse>> findEpisodeSummariesByContentIds(List<Long> contentIds) {
-        return queryFactory
-                .select(
-                        webnovelEpisode.webnovel.id,
-                        webnovelEpisode.id,
-                        webnovelEpisode.episodeNum,
-                        webnovelEpisode.episodeTitle,
-                        webnovelEpisode.publishedAt,
-                        webnovelEpisode.purchasePrice,
-                        Expressions.nullExpression(Integer.class)
-                )
-                .from(webnovelEpisode)
-                .where(
-                        webnovelEpisode.webnovel.id.in(contentIds),
-                        isNotDeleted(),
-                        isPublished()
-                )
-                .orderBy(webnovelEpisode.episodeNum.desc())
-                .limit(20)
-                .fetch()
-                .stream()
-                .filter(t -> t.get(webnovelEpisode.webnovel.id) != null)
-                .collect(Collectors.groupingBy(
-                        t -> Objects.requireNonNull(t.get(webnovelEpisode.webnovel.id)),
-                        Collectors.mapping(
-                                t -> new EpisodeSummaryResponse(
-                                        t.get(webnovelEpisode.id),
-                                        t.get(webnovelEpisode.episodeNum),
-                                        t.get(webnovelEpisode.episodeTitle),
-                                        t.get(webnovelEpisode.publishedAt),
-                                        t.get(webnovelEpisode.purchasePrice),
-                                        null
-                                ),
-                                Collectors.toList()
-                        )
-                ));
-
-    }
 
     private OrderSpecifier<?> getEpisodeOrder(String sort) {
         if ("first".equalsIgnoreCase(sort)) {

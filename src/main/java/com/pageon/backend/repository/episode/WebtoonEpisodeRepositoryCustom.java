@@ -11,5 +11,4 @@ public interface WebtoonEpisodeRepositoryCustom {
 
     Page<EpisodeSummaryResponse> findEpisodeSummaries(Long contentId, String sort, Pageable pageable);
 
-    Map<Long, List<EpisodeSummaryResponse>> findEpisodeSummariesByContentIds(List<Long> contentIds);
 }

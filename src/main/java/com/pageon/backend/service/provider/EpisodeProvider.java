@@ -2,6 +2,7 @@ package com.pageon.backend.service.provider;
 
 import com.pageon.backend.common.enums.EpisodeStatus;
 import com.pageon.backend.common.enums.PurchaseType;
+import com.pageon.backend.dto.mapping.EpisodeSummaryMapping;
 import com.pageon.backend.dto.response.CommentResponse;
 import com.pageon.backend.dto.response.creator.episode.EpisodeList;
 import com.pageon.backend.dto.response.episode.EpisodeSummaryResponse;
@@ -20,6 +21,8 @@ public interface EpisodeProvider {
     boolean supports(String contentType);
 
     Page<EpisodeSummaryResponse> findEpisodeSummaries(Long contentId, String sort, Pageable pageable);
+
+    List<EpisodeSummaryMapping> findTop20EpisodesByContentIds(List<Long> contentIds);
 
     Object findEpisodeDetail(Long userId, Long episodeId);
 

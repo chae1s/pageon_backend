@@ -3,6 +3,7 @@ package com.pageon.backend.service.provider;
 import com.pageon.backend.common.enums.ContentType;
 import com.pageon.backend.common.enums.EpisodeStatus;
 import com.pageon.backend.common.enums.PurchaseType;
+import com.pageon.backend.dto.mapping.EpisodeSummaryMapping;
 import com.pageon.backend.dto.response.CommentResponse;
 import com.pageon.backend.dto.response.EpisodeResponse;
 import com.pageon.backend.dto.response.creator.episode.EpisodeList;
@@ -45,6 +46,11 @@ public class WebnovelEpisodeProvider implements EpisodeProvider {
     @Override
     public Page<EpisodeSummaryResponse> findEpisodeSummaries(Long contentId, String sort, Pageable pageable) {
         return webnovelEpisodeRepository.findEpisodeSummaries(contentId, sort, pageable);
+    }
+
+    @Override
+    public List<EpisodeSummaryMapping> findTop20EpisodesByContentIds(List<Long> contentIds) {
+        return webnovelEpisodeRepository.findTop20EpisodeByContentIds(contentIds);
     }
 
     @Override

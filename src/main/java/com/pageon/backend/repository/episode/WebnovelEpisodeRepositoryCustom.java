@@ -11,5 +11,4 @@ public interface WebnovelEpisodeRepositoryCustom {
 
     Page<EpisodeSummaryResponse> findEpisodeSummaries(Long contentId, String sort, Pageable pageable);
 
-    Map<Long, List<EpisodeSummaryResponse>> findEpisodeSummariesByContentIds(List<Long> contentIds);
 }

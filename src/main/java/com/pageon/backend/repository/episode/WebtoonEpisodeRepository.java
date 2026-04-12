@@ -1,6 +1,7 @@
 package com.pageon.backend.repository.episode;
 
 import com.pageon.backend.common.enums.EpisodeStatus;
+import com.pageon.backend.dto.mapping.EpisodeSummaryMapping;
 import com.pageon.backend.dto.response.creator.episode.EpisodeList;
 import com.pageon.backend.entity.WebtoonEpisode;
 import org.springframework.data.domain.Page;
@@ -85,4 +86,22 @@ public interface WebtoonEpisodeRepository extends JpaRepository<WebtoonEpisode, 
             WHERE we.webtoon.id = :contentId
             """)
     void bulkUpdateDeletedAt(@Param("contentId") Long contentId, @Param("deletedAt") LocalDateTime deletedAt);
+
+    @Query(value = """
+        SELECT 
+            webtoon_id as contentId,
+            id as episodeId,
+            episode_num as episodeNum,
+            episode_title as episodeTitle,
+            published_at as publishedAt,
+            purchase_price as purchasePrice
+        FROM (
+            SELECT *, 
+                ROW_NUMBER() OVER (PARTITION BY webtoon_id ORDER BY episode_num DESC) as row_num 
+            FROM webtoon_episodes 
+            WHERE webtoon_id IN (:contentIds) AND deleted_at IS NULL AND episode_status = 'PUBLISHED'
+        ) as ranked_episodes
+        WHERE row_num <= 20
+    """, nativeQuery = true)
+    List<EpisodeSummaryMapping> findTop20EpisodeByContentIds(@Param("contentIds") List<Long> contentIds);
 }

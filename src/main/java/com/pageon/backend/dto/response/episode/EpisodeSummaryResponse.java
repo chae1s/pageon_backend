@@ -1,14 +1,15 @@
 package com.pageon.backend.dto.response.episode;
 
+import com.pageon.backend.dto.mapping.EpisodeSummaryMapping;
 import com.querydsl.core.annotations.QueryProjection;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDate;
 
 @Getter
+@Builder
 @NoArgsConstructor
+@AllArgsConstructor
 public class EpisodeSummaryResponse {
     private Long episodeId;
     private Integer episodeNum;
@@ -28,5 +29,16 @@ public class EpisodeSummaryResponse {
         this.publishedAt = publishedAt;
         this.purchasePrice = purchasePrice;
         this.rentalPrice = rentalPrice;
+    }
+
+    public static EpisodeSummaryResponse of(EpisodeSummaryMapping mapping) {
+        return EpisodeSummaryResponse.builder()
+                .episodeId(mapping.getEpisodeId())
+                .episodeNum(mapping.getEpisodeNum())
+                .episodeTitle(mapping.getEpisodeTitle())
+                .publishedAt(mapping.getPublishedAt())
+                .purchasePrice(mapping.getPurchasePrice())
+                .rentalPrice(mapping.getRentalPrice())
+                .build();
     }
 }

@@ -2,6 +2,7 @@ package com.pageon.backend.service.cache;
 
 import com.pageon.backend.common.enums.ContentType;
 import com.pageon.backend.common.enums.SerialDay;
+import com.pageon.backend.dto.mapping.EpisodeSummaryMapping;
 import com.pageon.backend.dto.response.ContentResponse;
 import com.pageon.backend.dto.response.PageResponse;
 import com.pageon.backend.dto.response.content.ContentDetailResponse;
@@ -28,6 +29,7 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -43,6 +45,7 @@ public class ContentCacheService {
     private final WebnovelEpisodeRepository webnovelEpisodeRepository;
     private final WebtoonEpisodeRepository webtoonEpisodeRepository;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final List<EpisodeProvider> episodeProviders;
 
     @CachePut(value = "contents:daily", key = "#contentType + ':' + #serialDay")
     public List<ContentResponse.Simple> refreshDailyContents(String contentType, Pageable pageable, SerialDay serialDay) {
@@ -129,29 +132,47 @@ public class ContentCacheService {
                 .map(ContentDetailResponse::getContentId)
                 .toList();
 
-        Map<Long, List<EpisodeSummaryResponse>> webnovelEpisodeMap = webnovelEpisodeRepository.findEpisodeSummariesByContentIds(webnovelIds);
-        Map<Long, List<EpisodeSummaryResponse>> webtoonEpisodeMap = webtoonEpisodeRepository.findEpisodeSummariesByContentIds(webtoonIds);
-
-        webnovelEpisodeMap.forEach((contentId, episodes) ->
-                redisTemplate.opsForValue().set(
-                        "episodes:summaries:" + contentId,
-                        episodes,
-                        Duration.ofHours(24)
-                )
-        );
-
-        webtoonEpisodeMap.forEach((contentId, episodes) ->
-                redisTemplate.opsForValue().set(
-                        "episodes:summaries:" + contentId,
-                        episodes,
-                        Duration.ofHours(24)
-                )
-        );
+        processAndCacheEpisode(webnovelIds, "webnovels");
+        processAndCacheEpisode(webtoonIds, "webtoons");
 
     }
 
+    private void processAndCacheEpisode(List<Long> contentIds, String contentType) {
+        if (contentIds.isEmpty()) {
+            return;
+        }
+        EpisodeProvider provider = getEpisodeProvider(contentType);
+
+        List<EpisodeSummaryMapping> mappings = provider.findTop20EpisodesByContentIds(contentIds);
+
+        Map<Long, List<EpisodeSummaryResponse>> episodeMap = mappings.stream()
+                .collect(Collectors.groupingBy(
+                        EpisodeSummaryMapping::getContentId,
+                        Collectors.mapping(
+                                EpisodeSummaryResponse::of,
+                                Collectors.toCollection(ArrayList::new)
+                        )
+                ));
+
+        episodeMap.forEach((contentId, episodes) ->
+                redisTemplate.opsForValue().set(
+                        "episodes:summaries:" + contentId,
+                        episodes,
+                        Duration.ofHours(24)
+                )
+        );
+    }
+
+
     private ContentProvider getProvider(String contentType) {
         return providers.stream()
+                .filter(p -> p.supports(contentType))
+                .findFirst()
+                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_CONTENT_TYPE));
+    }
+
+    private EpisodeProvider getEpisodeProvider(String contentType) {
+        return episodeProviders.stream()
                 .filter(p -> p.supports(contentType))
                 .findFirst()
                 .orElseThrow(() -> new CustomException(ErrorCode.INVALID_CONTENT_TYPE));
