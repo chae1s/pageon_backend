@@ -79,7 +79,7 @@ public class ContentScheduler {
     }
 
     @ExecutionTimer
-    @Scheduled(cron = "0 29 3 * * *")
+    @Scheduled(cron = "0 50 23 * * *")
     public void runDailyPublishing() {
         LocalDate tomorrow = LocalDate.now().plusDays(1);
 
