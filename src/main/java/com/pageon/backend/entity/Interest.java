@@ -19,6 +19,8 @@ import org.hibernate.annotations.DynamicUpdate;
                 name = "uk_reading_history_user_content",
                 columnNames = {"user_id", "content_id"}
         )
+    }, indexes = {
+        @Index(name = "idx_user_content", columnList = "user_id, content_id")
 })
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor

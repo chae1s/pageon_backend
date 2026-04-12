@@ -6,7 +6,7 @@ import com.pageon.backend.entity.EpisodePurchase;
 import com.pageon.backend.entity.User;
 import com.pageon.backend.exception.CustomException;
 import com.pageon.backend.exception.ErrorCode;
-import com.pageon.backend.repository.EpisodePurchaseRepository;
+import com.pageon.backend.repository.episode.EpisodePurchaseRepository;
 import com.pageon.backend.repository.UserRepository;
 import com.pageon.backend.service.provider.EpisodeProvider;
 import org.junit.jupiter.api.BeforeEach;

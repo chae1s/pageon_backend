@@ -82,6 +82,7 @@ public class WebnovelEpisodeRepositoryImpl implements WebnovelEpisodeRepositoryC
                         isPublished()
                 )
                 .orderBy(webnovelEpisode.episodeNum.desc())
+                .limit(20)
                 .fetch()
                 .stream()
                 .filter(t -> t.get(webnovelEpisode.webnovel.id) != null)

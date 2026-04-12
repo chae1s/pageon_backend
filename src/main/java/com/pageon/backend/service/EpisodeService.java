@@ -7,7 +7,7 @@ import com.pageon.backend.entity.EpisodePurchase;
 import com.pageon.backend.entity.User;
 import com.pageon.backend.exception.CustomException;
 import com.pageon.backend.exception.ErrorCode;
-import com.pageon.backend.repository.EpisodePurchaseRepository;
+import com.pageon.backend.repository.episode.EpisodePurchaseRepository;
 import com.pageon.backend.repository.UserRepository;
 import com.pageon.backend.service.provider.EpisodeProvider;
 import lombok.RequiredArgsConstructor;
@@ -48,8 +48,10 @@ public class EpisodeService {
             log.info("episodes DB 조회");
         }
 
+        List<Long> episodeIds = episodes.stream().map(EpisodeSummaryResponse::getEpisodeId).toList();
+
         if (userId != null && !episodes.isEmpty()) {
-            Map<Long, EpisodePurchaseResponse> purchaseMap = getPurchaseMap(userId, contentId);
+            Map<Long, EpisodePurchaseResponse> purchaseMap = getPurchaseMap(userId, episodeIds);
 
             episodes.forEach(episode -> {
                 EpisodePurchaseResponse purchaseResponse = purchaseMap.get(episode.getEpisodeId());
@@ -62,14 +64,11 @@ public class EpisodeService {
         return episodes;
     }
 
-    private Map<Long, EpisodePurchaseResponse> getPurchaseMap(Long userId, Long contentId) {
-        List<EpisodePurchase> episodePurchases = episodePurchaseRepository.findByUser_IdAndContent_Id(userId, contentId);
+    private Map<Long, EpisodePurchaseResponse> getPurchaseMap(Long userId, List<Long> episodeIds) {
+        List<EpisodePurchaseResponse> episodePurchases = episodePurchaseRepository.findEpisodePurchases(userId, episodeIds);
 
         return episodePurchases.stream()
-                .collect(Collectors.toMap(
-                        EpisodePurchase::getEpisodeId,
-                        EpisodePurchaseResponse::of
-                ));
+                .collect(Collectors.toMap(EpisodePurchaseResponse::getEpisodeId, p -> p));
     }
 
     @Transactional

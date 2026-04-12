@@ -16,7 +16,7 @@ import java.util.List;
 @DynamicUpdate
 @Table(name = "webnovel_episodes", indexes = {
         @Index(name = "idx_wne_published_status", columnList = "published_at, episode_status"),
-        @Index(name = "idx_webnovel_episode_status", columnList = "webnovel_id, episode_status")
+        @Index(name = "idx_episodes_optimized", columnList = "webnovel_id, episode_status, deleted_at, episode_num")
 })
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor

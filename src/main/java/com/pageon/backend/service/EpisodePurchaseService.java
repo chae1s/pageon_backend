@@ -1,6 +1,5 @@
 package com.pageon.backend.service;
 
-import com.pageon.backend.dto.record.ActionLogEvent;
 import com.pageon.backend.entity.base.EpisodeBase;
 import com.pageon.backend.common.enums.ActionType;
 import com.pageon.backend.common.enums.ContentType;
@@ -9,6 +8,7 @@ import com.pageon.backend.entity.*;
 import com.pageon.backend.exception.CustomException;
 import com.pageon.backend.exception.ErrorCode;
 import com.pageon.backend.repository.*;
+import com.pageon.backend.repository.episode.EpisodePurchaseRepository;
 import com.pageon.backend.service.handler.EpisodeActionHandler;
 import com.pageon.backend.service.provider.EpisodeProvider;
 import lombok.RequiredArgsConstructor;

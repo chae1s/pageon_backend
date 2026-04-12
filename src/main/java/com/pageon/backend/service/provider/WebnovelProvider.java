@@ -5,6 +5,7 @@ import com.pageon.backend.common.enums.SerialDay;
 import com.pageon.backend.dto.response.EpisodeResponse;
 import com.pageon.backend.entity.*;
 import com.pageon.backend.repository.*;
+import com.pageon.backend.repository.episode.EpisodePurchaseRepository;
 import com.pageon.backend.repository.episode.WebnovelEpisodeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

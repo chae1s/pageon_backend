@@ -86,6 +86,7 @@ public class WebtoonEpisodeRepositoryImpl implements WebtoonEpisodeRepositoryCus
                         isPublished()
                 )
                 .orderBy(webtoonEpisode.episodeNum.desc())
+                .limit(20)
                 .fetch()
                 .stream()
                 .filter(t -> t.get(webtoonEpisode.webtoon.id) != null)

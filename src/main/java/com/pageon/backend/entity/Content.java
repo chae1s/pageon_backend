@@ -19,7 +19,9 @@ import java.util.List;
 @SuperBuilder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-@Table(name = "contents")
+@Table(name = "contents", indexes = {
+        @Index(name = "idx_content_detail_optimized", columnList = "id, work_status, deleted_at")
+})
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "DTYPE")
 public abstract class Content extends BaseTimeEntity {
