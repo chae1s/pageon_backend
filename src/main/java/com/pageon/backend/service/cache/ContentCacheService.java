@@ -12,10 +12,6 @@ import com.pageon.backend.exception.CustomException;
 import com.pageon.backend.exception.ErrorCode;
 import com.pageon.backend.repository.content.ContentRepository;
 import com.pageon.backend.repository.KeywordRepository;
-import com.pageon.backend.repository.WebnovelRepository;
-import com.pageon.backend.repository.WebtoonRepository;
-import com.pageon.backend.repository.episode.WebnovelEpisodeRepository;
-import com.pageon.backend.repository.episode.WebtoonEpisodeRepository;
 import com.pageon.backend.service.provider.ContentProvider;
 import com.pageon.backend.service.provider.EpisodeProvider;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +19,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.connection.RedisStringCommands;
+import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.types.Expiration;
+import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -42,8 +42,6 @@ public class ContentCacheService {
     private final ContentRepository contentRepository;
     private final KeywordRepository keywordRepository;
     private final List<ContentProvider> providers;
-    private final WebnovelEpisodeRepository webnovelEpisodeRepository;
-    private final WebtoonEpisodeRepository webtoonEpisodeRepository;
     private final RedisTemplate<String, Object> redisTemplate;
     private final List<EpisodeProvider> episodeProviders;
 
@@ -109,32 +107,51 @@ public class ContentCacheService {
 
 
     public void warmUpContentDetailBySerialDay() {
-        String today = LocalDate.now().plusDays(1).getDayOfWeek().name();
-        SerialDay serialDay = SerialDay.valueOf(today);
+        SerialDay tomorrowSerialDay = getTomorrowSerialDay();
 
-        List<ContentDetailResponse> contents = contentRepository.findContentDetails(serialDay);
+        List<ContentDetailResponse> contents = contentRepository.findContentDetails(tomorrowSerialDay);
 
-        contents.forEach(content ->
-                redisTemplate.opsForValue().set(
-                    "contents:detail:" + content.getContentId(),
-                    content,
-                    Duration.ofHours(24)
-                )
+        RedisSerializer<String> keySerializer = (RedisSerializer<String>) redisTemplate.getKeySerializer();
+        RedisSerializer<Object> valueSerializer = (RedisSerializer<Object>) redisTemplate.getValueSerializer();
+
+        redisTemplate.executePipelined((RedisCallback<Object>) connection -> {
+            contents.forEach(content -> {
+                byte[] keyBytes = keySerializer.serialize("contents:detail:" + content.getContentId());
+                byte[] valueBytes = valueSerializer.serialize(content);
+                if (keyBytes == null || valueBytes == null) return;
+                connection.stringCommands().set(
+                        keyBytes, valueBytes,
+                        Expiration.seconds(Duration.ofHours(24).toSeconds()),
+                        RedisStringCommands.SetOption.upsert()
+                );
+            });
+            return null;
+        });
+
+        Map<ContentType, List<Long>> groupedIds = contents.stream()
+                .collect(Collectors.groupingBy(
+                        ContentDetailResponse::getContentType,
+                        Collectors.mapping(ContentDetailResponse::getContentId, Collectors.toList())
+                ));
+
+        partitionContentIds(groupedIds.getOrDefault(ContentType.WEBNOVEL, List.of()), "webnovels");
+        partitionContentIds(groupedIds.getOrDefault(ContentType.WEBTOON, List.of()), "webtoons");
+
+    }
+
+    private SerialDay getTomorrowSerialDay() {
+        return SerialDay.valueOf(
+                LocalDate.now().plusDays(1).getDayOfWeek().name()
         );
+    }
 
-        List<Long> webnovelIds = contents.stream()
-                .filter(c -> c.getContentType().equals(ContentType.WEBNOVEL))
-                .map(ContentDetailResponse::getContentId)
-                .toList();
+    private void partitionContentIds(List<Long> contentIds, String contentType) {
+        int batchSize = 500;
 
-        List<Long> webtoonIds = contents.stream()
-                .filter(c -> c.getContentType().equals(ContentType.WEBTOON))
-                .map(ContentDetailResponse::getContentId)
-                .toList();
-
-        processAndCacheEpisode(webnovelIds, "webnovels");
-        processAndCacheEpisode(webtoonIds, "webtoons");
-
+        for (int i = 0; i < contentIds.size(); i += batchSize) {
+            List<Long> batchIds = contentIds.subList(i, Math.min(i + batchSize, contentIds.size()));
+            processAndCacheEpisode(batchIds, contentType);
+        }
     }
 
     private void processAndCacheEpisode(List<Long> contentIds, String contentType) {
@@ -154,13 +171,29 @@ public class ContentCacheService {
                         )
                 ));
 
-        episodeMap.forEach((contentId, episodes) ->
-                redisTemplate.opsForValue().set(
-                        "episodes:summaries:" + contentId,
-                        episodes,
-                        Duration.ofHours(24)
-                )
-        );
+        RedisSerializer<String> keySerializer = (RedisSerializer<String>) redisTemplate.getKeySerializer();
+        RedisSerializer<Object> valueSerializer = (RedisSerializer<Object>) redisTemplate.getValueSerializer();
+
+        redisTemplate.executePipelined((RedisCallback<Object>) connection -> {
+            episodeMap.forEach((contentId, episodes) -> {
+                String redisKey = "episodes:summaries:" + contentId;
+
+                byte[] keyBytes = keySerializer.serialize(redisKey);
+                byte[] valueBytes = valueSerializer.serialize(episodes);
+
+                if (keyBytes == null || valueBytes == null) return;
+
+                connection.stringCommands().set(
+                        keyBytes,
+                        valueBytes,
+                        Expiration.seconds(Duration.ofHours(24).toSeconds()),
+                        RedisStringCommands.SetOption.upsert()
+                );
+            });
+
+            return null;
+        });
+
     }
 
 
