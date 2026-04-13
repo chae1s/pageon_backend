@@ -7,15 +7,13 @@ import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.SliceImpl;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static com.pageon.backend.entity.QWebtoonEpisode.webtoonEpisode;
 
@@ -31,7 +29,7 @@ public class WebtoonEpisodeRepositoryImpl implements WebtoonEpisodeRepositoryCus
     }
 
     @Override
-    public Page<EpisodeSummaryResponse> findEpisodeSummaries(Long contentId, String sort, Pageable pageable) {
+    public Slice<EpisodeSummaryResponse> findEpisodeSummaries(Long contentId, String sort, Pageable pageable) {
         List<EpisodeSummaryResponse> responses = queryFactory
                 .select(new QEpisodeSummaryResponse(
                         webtoonEpisode.id,
@@ -52,19 +50,13 @@ public class WebtoonEpisodeRepositoryImpl implements WebtoonEpisodeRepositoryCus
                 .limit(pageable.getPageSize())
                 .fetch();
 
-        long total = Optional.ofNullable(
-                queryFactory
-                        .select(webtoonEpisode.count())
-                        .from(webtoonEpisode)
-                        .where(
-                                webtoonEpisode.webtoon.id.eq(contentId),
-                                isNotDeleted(),
-                                isPublished()
-                        )
-                        .fetchOne()
-        ).orElse(0L);
+        boolean hasNext = false;
+        if (responses.size() > pageable.getPageSize()) {
+            responses.remove(pageable.getPageSize());
+            hasNext = true;
+        }
 
-        return new PageImpl<>(responses, pageable, total);
+        return new SliceImpl<>(responses, pageable, hasNext);
     }
 
     private OrderSpecifier<?> getEpisodeOrder(String sort) {

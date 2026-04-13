@@ -8,9 +8,7 @@ import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -26,8 +24,10 @@ public class WebnovelEpisodeRepositoryImpl implements WebnovelEpisodeRepositoryC
     private BooleanExpression isPublished() {
         return webnovelEpisode.episodeStatus.eq(EpisodeStatus.PUBLISHED);
     }
+
     @Override
-    public Page<EpisodeSummaryResponse> findEpisodeSummaries(Long contentId, String sort, Pageable pageable) {
+    public Slice<EpisodeSummaryResponse> findEpisodeSummaries(Long contentId, String sort, Pageable pageable) {
+
         List<EpisodeSummaryResponse> responses = queryFactory
                 .select(new QEpisodeSummaryResponse(
                         webnovelEpisode.id,
@@ -45,22 +45,16 @@ public class WebnovelEpisodeRepositoryImpl implements WebnovelEpisodeRepositoryC
                 )
                 .orderBy(getEpisodeOrder(sort))
                 .offset(pageable.getOffset())
-                .limit(pageable.getPageSize())
+                .limit(pageable.getPageSize() + 1)
                 .fetch();
 
-        long total = Optional.ofNullable(
-                queryFactory
-                        .select(webnovelEpisode.count())
-                        .from(webnovelEpisode)
-                        .where(
-                                webnovelEpisode.webnovel.id.eq(contentId),
-                                isNotDeleted(),
-                                isPublished()
-                        )
-                        .fetchOne()
-        ).orElse(0L);
+        boolean hasNext = false;
+        if (responses.size() > pageable.getPageSize()) {
+            responses.remove(pageable.getPageSize());
+            hasNext = true;
+        }
 
-        return new PageImpl<>(responses, pageable, total);
+        return new SliceImpl<>(responses, pageable, hasNext);
     }
 
 

@@ -1,9 +1,9 @@
 package com.pageon.backend.service;
 
 import com.pageon.backend.dto.request.EpisodeRatingRequest;
+import com.pageon.backend.dto.response.episode.EpisodeCacheResponse;
 import com.pageon.backend.dto.response.episode.EpisodePurchaseResponse;
 import com.pageon.backend.dto.response.episode.EpisodeSummaryResponse;
-import com.pageon.backend.entity.EpisodePurchase;
 import com.pageon.backend.entity.User;
 import com.pageon.backend.exception.CustomException;
 import com.pageon.backend.exception.ErrorCode;
@@ -12,9 +12,7 @@ import com.pageon.backend.repository.UserRepository;
 import com.pageon.backend.service.provider.EpisodeProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,14 +32,14 @@ public class EpisodeService {
     private final EpisodePurchaseRepository episodePurchaseRepository;
     private final RedisTemplate<String, Object> redisTemplate;
 
-    public Page<EpisodeSummaryResponse> getEpisodeSummaries(Long userId, String contentType, Long contentId, String sort, Pageable pageable) {
+    public Slice<EpisodeSummaryResponse> getEpisodeSummaries(Long userId, String contentType, Long contentId, String sort, Pageable pageable) {
         EpisodeProvider provider = getProvider(contentType);
-        List<EpisodeSummaryResponse> cached = (List<EpisodeSummaryResponse>) redisTemplate.opsForValue().get("episodes:summaries:" + contentId);
+        EpisodeCacheResponse cached = (EpisodeCacheResponse) redisTemplate.opsForValue().get("episodes:summaries:" + contentId);
 
-        Page<EpisodeSummaryResponse> episodes;
+        Slice<EpisodeSummaryResponse> episodes;
 
-        if (cached != null) {
-            episodes = new PageImpl<>(cached, pageable, cached.size());
+        if (pageable.getPageNumber() == 0 && sort.equals("recent") && cached != null) {
+            episodes = new SliceImpl<>(cached.getEpisodes(), pageable, cached.isHasNext());
             log.info("episodes 캐시 조회");
         } else {
             episodes = provider.findEpisodeSummaries(contentId, sort, pageable);

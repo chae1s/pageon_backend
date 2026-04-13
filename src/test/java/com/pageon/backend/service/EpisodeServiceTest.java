@@ -1,6 +1,8 @@
 package com.pageon.backend.service;
 
 import com.pageon.backend.dto.request.EpisodeRatingRequest;
+import com.pageon.backend.dto.response.episode.EpisodeCacheResponse;
+import com.pageon.backend.dto.response.episode.EpisodePurchaseResponse;
 import com.pageon.backend.dto.response.episode.EpisodeSummaryResponse;
 import com.pageon.backend.entity.EpisodePurchase;
 import com.pageon.backend.entity.User;
@@ -16,11 +18,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.web.client.RestTemplate;
+
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -48,11 +51,105 @@ class EpisodeServiceTest {
     private EpisodeProvider episodeProvider;
     @Mock
     private EpisodePurchaseRepository episodePurchaseRepository;
+    @Mock
+    private RedisTemplate<String, Object> redisTemplate;
+    @Mock
+    private ValueOperations<String, Object> valueOperations;
 
     @BeforeEach
     void setUp() {
         lenient().when(providers.stream()).thenReturn(Stream.of(episodeProvider));
         lenient().when(episodeProvider.supports(anyString())).thenReturn(true);
+        lenient().when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+    }
+
+    @Test
+    @DisplayName("에피소드 목록 조회 성공 - 캐시 히트")
+    void getEpisodeSummaries_whenCacheHit_shouldReturnCachedEpisodes() {
+        // given
+        EpisodeSummaryResponse episode = mock(EpisodeSummaryResponse.class);
+        when(episode.getEpisodeId()).thenReturn(1L);
+
+        EpisodeCacheResponse cached = mock(EpisodeCacheResponse.class);
+        when(cached.getEpisodes()).thenReturn(List.of(episode));
+        when(cached.isHasNext()).thenReturn(false);
+
+        when(valueOperations.get("episodes:summaries:1")).thenReturn(cached);
+
+        // when
+        Slice<EpisodeSummaryResponse> result = episodeService.getEpisodeSummaries(
+                null, "webnovels", 1L, "recent", PageRequest.of(0, 10)); // ✅ page=0, sort=recent
+
+        // then
+        assertNotNull(result);
+        assertEquals(1, result.getContent().size());
+        verify(episodeProvider, never()).findEpisodeSummaries(any(), any(), any()); // ✅ DB 조회 안 함
+    }
+
+    @Test
+    @DisplayName("에피소드 목록 조회 성공 - 캐시 미스")
+    void getEpisodeSummaries_whenCacheMiss_shouldReturnFromDB() {
+        // given
+        EpisodeSummaryResponse episode = mock(EpisodeSummaryResponse.class);
+        when(episode.getEpisodeId()).thenReturn(1L);
+
+        Slice<EpisodeSummaryResponse> episodeSlice =
+                new SliceImpl<>(List.of(episode), PageRequest.of(0, 10), false);
+
+        when(valueOperations.get("episodes:summaries:1")).thenReturn(null); // ✅ 캐시 없음
+        doReturn(episodeSlice).when(episodeProvider)
+                .findEpisodeSummaries(eq(1L), anyString(), any(Pageable.class));
+
+        // when
+        Slice<EpisodeSummaryResponse> result = episodeService.getEpisodeSummaries(
+                null, "webnovels", 1L, "recent", PageRequest.of(0, 10));
+
+        // then
+        assertNotNull(result);
+        verify(episodeProvider).findEpisodeSummaries(eq(1L), anyString(), any(Pageable.class)); // ✅ DB 조회
+    }
+
+    @Test
+    @DisplayName("page가 0이 아니면 캐시 사용 안 함")
+    void getEpisodeSummaries_whenPageNotZero_shouldNotUseCache() {
+        // given
+        EpisodeSummaryResponse episode = mock(EpisodeSummaryResponse.class);
+        when(episode.getEpisodeId()).thenReturn(1L);
+
+        Slice<EpisodeSummaryResponse> episodeSlice =
+                new SliceImpl<>(List.of(episode), PageRequest.of(1, 10), false);
+
+        doReturn(episodeSlice).when(episodeProvider)
+                .findEpisodeSummaries(eq(1L), anyString(), any(Pageable.class));
+
+        // when
+        episodeService.getEpisodeSummaries(
+                null, "webnovels", 1L, "recent", PageRequest.of(1, 10)); // ✅ page=1
+
+        // then
+        verify(episodeProvider).findEpisodeSummaries(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("sort가 recent가 아니면 캐시 사용 안 함")
+    void getEpisodeSummaries_whenSortNotRecent_shouldNotUseCache() {
+        // given
+        EpisodeSummaryResponse episode = mock(EpisodeSummaryResponse.class);
+        when(episode.getEpisodeId()).thenReturn(1L);
+
+        Slice<EpisodeSummaryResponse> episodeSlice =
+                new SliceImpl<>(List.of(episode), PageRequest.of(0, 10), false);
+
+
+        doReturn(episodeSlice).when(episodeProvider)
+                .findEpisodeSummaries(eq(1L), anyString(), any(Pageable.class));
+
+        // when
+        episodeService.getEpisodeSummaries(
+                null, "webnovels", 1L, "oldest", PageRequest.of(0, 10)); // ✅ sort=oldest
+
+        // then
+        verify(episodeProvider).findEpisodeSummaries(any(), any(), any());
     }
 
     @Test
@@ -65,24 +162,24 @@ class EpisodeServiceTest {
         EpisodeSummaryResponse episode2 = mock(EpisodeSummaryResponse.class);
         when(episode2.getEpisodeId()).thenReturn(2L);
 
-        Page<EpisodeSummaryResponse> episodePage = new PageImpl<>(List.of(episode1, episode2));
+        Slice<EpisodeSummaryResponse> episodeSlice = new SliceImpl<>(
+                List.of(episode1, episode2), PageRequest.of(0, 10), false);
 
-        EpisodePurchase purchase = mock(EpisodePurchase.class);
+        EpisodePurchaseResponse purchase = mock(EpisodePurchaseResponse.class);
         when(purchase.getEpisodeId()).thenReturn(1L);
 
-        doReturn(episodePage).when(episodeProvider)
+        doReturn(episodeSlice).when(episodeProvider)
                 .findEpisodeSummaries(eq(1L), anyString(), any(Pageable.class));
-        when(episodePurchaseRepository.findByUser_IdAndContent_Id(eq(1L), eq(1L)))
+        when(episodePurchaseRepository.findEpisodePurchases(eq(1L), anyList()))
                 .thenReturn(List.of(purchase));
 
         // when
-        Page<EpisodeSummaryResponse> result = episodeService.getEpisodeSummaries(
+        Slice<EpisodeSummaryResponse> result = episodeService.getEpisodeSummaries(
                 1L, "webnovels", 1L, "latest", PageRequest.of(0, 10));
 
         // then
         assertNotNull(result);
-        assertEquals(2, result.getTotalElements());
-        verify(episodePurchaseRepository).findByUser_IdAndContent_Id(eq(1L), eq(1L));
+        verify(episodePurchaseRepository).findEpisodePurchases(eq(1L), anyList());
         verify(episode1).setEpisodePurchase(any());
         verify(episode2, never()).setEpisodePurchase(any());
     }
@@ -92,19 +189,22 @@ class EpisodeServiceTest {
     void getEpisodeSummaries_withNullUserId_shouldNotFetchPurchase() {
         // given
         EpisodeSummaryResponse episode = mock(EpisodeSummaryResponse.class);
-        Page<EpisodeSummaryResponse> episodePage = new PageImpl<>(List.of(episode));
+        when(episode.getEpisodeId()).thenReturn(1L);
 
-        doReturn(episodePage).when(episodeProvider)
+        Slice<EpisodeSummaryResponse> episodeSlice = new SliceImpl<>(
+                List.of(episode), PageRequest.of(0, 10), false);
+
+        doReturn(episodeSlice).when(episodeProvider)
                 .findEpisodeSummaries(eq(1L), anyString(), any(Pageable.class));
 
         // when
-        Page<EpisodeSummaryResponse> result = episodeService.getEpisodeSummaries(
+        Slice<EpisodeSummaryResponse> result = episodeService.getEpisodeSummaries(
                 null, "webnovels", 1L, "latest", PageRequest.of(0, 10));
 
         // then
         assertNotNull(result);
         verify(episodePurchaseRepository, never())
-                .findByUser_IdAndContent_Id(any(), any());
+                .findEpisodePurchases(any(), any());
         verify(episode, never()).setEpisodePurchase(any());
     }
 
@@ -112,17 +212,20 @@ class EpisodeServiceTest {
     @DisplayName("에피소드가 없으면 구매 조회 안 함")
     void getEpisodeSummaries_withEmptyEpisodes_shouldNotFetchPurchase() {
         // given
-        doReturn(Page.empty()).when(episodeProvider)
+        Slice<EpisodeSummaryResponse> emptySlice =
+                new SliceImpl<>(List.of(), PageRequest.of(0, 10), false);
+
+        doReturn(emptySlice).when(episodeProvider)
                 .findEpisodeSummaries(eq(1L), anyString(), any(Pageable.class));
 
         // when
-        Page<EpisodeSummaryResponse> result = episodeService.getEpisodeSummaries(
+        Slice<EpisodeSummaryResponse> result = episodeService.getEpisodeSummaries(
                 1L, "webnovels", 1L, "latest", PageRequest.of(0, 10));
 
         // then
         assertTrue(result.isEmpty());
         verify(episodePurchaseRepository, never())
-                .findByUser_IdAndContent_Id(any(), any());
+                .findEpisodePurchases(any(), any());
     }
 
     @Test
@@ -132,11 +235,12 @@ class EpisodeServiceTest {
         EpisodeSummaryResponse episode = mock(EpisodeSummaryResponse.class);
         when(episode.getEpisodeId()).thenReturn(1L);
 
-        Page<EpisodeSummaryResponse> episodePage = new PageImpl<>(List.of(episode));
+        Slice<EpisodeSummaryResponse> episodeSlice = new SliceImpl<>(
+                List.of(episode), PageRequest.of(0, 10), false);
 
-        doReturn(episodePage).when(episodeProvider)
+        doReturn(episodeSlice).when(episodeProvider)
                 .findEpisodeSummaries(eq(1L), anyString(), any(Pageable.class));
-        when(episodePurchaseRepository.findByUser_IdAndContent_Id(eq(1L), eq(1L)))
+        when(episodePurchaseRepository.findEpisodePurchases(eq(1L), anyList()))
                 .thenReturn(List.of());
 
         // when

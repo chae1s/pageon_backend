@@ -6,6 +6,7 @@ import com.pageon.backend.dto.mapping.EpisodeSummaryMapping;
 import com.pageon.backend.dto.response.ContentResponse;
 import com.pageon.backend.dto.response.PageResponse;
 import com.pageon.backend.dto.response.content.ContentDetailResponse;
+import com.pageon.backend.dto.response.episode.EpisodeCacheResponse;
 import com.pageon.backend.dto.response.episode.EpisodeSummaryResponse;
 import com.pageon.backend.entity.*;
 import com.pageon.backend.exception.CustomException;
@@ -29,7 +30,6 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -167,7 +167,7 @@ public class ContentCacheService {
                         EpisodeSummaryMapping::getContentId,
                         Collectors.mapping(
                                 EpisodeSummaryResponse::of,
-                                Collectors.toCollection(ArrayList::new)
+                                Collectors.toList()
                         )
                 ));
 
@@ -177,9 +177,15 @@ public class ContentCacheService {
         redisTemplate.executePipelined((RedisCallback<Object>) connection -> {
             episodeMap.forEach((contentId, episodes) -> {
                 String redisKey = "episodes:summaries:" + contentId;
+                boolean hasNext = episodes.size() > 20;
+                if (hasNext) {
+                    episodes.remove(20);
+                }
+
+                EpisodeCacheResponse cacheResponse = new EpisodeCacheResponse(episodes, hasNext);
 
                 byte[] keyBytes = keySerializer.serialize(redisKey);
-                byte[] valueBytes = valueSerializer.serialize(episodes);
+                byte[] valueBytes = valueSerializer.serialize(cacheResponse);
 
                 if (keyBytes == null || valueBytes == null) return;
 

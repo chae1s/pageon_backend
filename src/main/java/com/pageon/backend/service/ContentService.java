@@ -57,7 +57,7 @@ public class ContentService {
         Long userId = (principalUser != null) ? principalUser.getId() : null;
         List<EpisodeResponse.Summary> episodes = provider.findEpisodes(userId, contentId);
 
-        Boolean isInterested = (userId != null) && interestRepository.existsByUser_IdAndContentId(userId, contentId);
+        Boolean isInterested = (userId != null) && interestRepository.existsByUserIdAndContentId(userId, contentId);
 
         log.info("Successfully retrieved {}: {} (ID: {})", contentType, content.getTitle(), contentId);
         return ContentResponse.Detail.fromEntity(content, episodes, isInterested);
@@ -74,7 +74,7 @@ public class ContentService {
             log.info("content DB 조회");
         }
 
-        Boolean isInterested = (userId != null) && interestRepository.existsByUser_IdAndContentId(userId, contentId);
+        Boolean isInterested = (userId != null) && interestRepository.existsByUserIdAndContentId(userId, contentId);
 
         content.setIsInterested(isInterested);
 

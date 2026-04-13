@@ -8,12 +8,13 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
 public interface InterestRepository extends JpaRepository<Interest, Long> {
-    Boolean existsByUser_IdAndContentId(Long userId, Long contentId);
+    @Query("SELECT COUNT(i.id) > 0 FROM Interest i " +
+            "WHERE i.user.id = :userId AND i.content.id = :contentId")
+    Boolean existsByUserIdAndContentId(@Param("userId") Long userId, @Param("contentId") Long contentId);
 
     Optional<Interest> findByUser_IdAndContentId(Long userId, Long contentId);
 

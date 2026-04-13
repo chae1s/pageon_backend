@@ -7,11 +7,11 @@ import com.pageon.backend.dto.response.CommentResponse;
 import com.pageon.backend.dto.response.creator.episode.EpisodeList;
 import com.pageon.backend.dto.response.episode.EpisodeSummaryResponse;
 import com.pageon.backend.entity.User;
-import com.pageon.backend.entity.base.EpisodeBase;
 import com.pageon.backend.entity.base.EpisodeCommentBase;
 import com.pageon.backend.service.EpisodePurchaseService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 
 import java.util.List;
 import java.util.Optional;
@@ -20,7 +20,7 @@ import java.util.Set;
 public interface EpisodeProvider {
     boolean supports(String contentType);
 
-    Page<EpisodeSummaryResponse> findEpisodeSummaries(Long contentId, String sort, Pageable pageable);
+    Slice<EpisodeSummaryResponse> findEpisodeSummaries(Long contentId, String sort, Pageable pageable);
 
     List<EpisodeSummaryMapping> findTop20EpisodesByContentIds(List<Long> contentIds);
 
