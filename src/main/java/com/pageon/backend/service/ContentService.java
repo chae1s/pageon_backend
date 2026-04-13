@@ -81,6 +81,7 @@ public class ContentService {
         return content;
     }
 
+    @ExecutionTimer
     @Transactional(readOnly = true)
     public Page<ContentResponse.Search> searchContentsByKeyword(String contentType, String keyword, Pageable pageable, String sort) {
         log.info("Searching for {} with keyword: '{}'", contentType, keyword);
@@ -96,6 +97,7 @@ public class ContentService {
         return contents.map(ContentResponse.Search::fromEntity);
     }
 
+    @ExecutionTimer
     @Transactional(readOnly = true)
     public Page<ContentResponse.Search> searchContentsByTitleOrAuthor(String contentType, String query, Pageable pageable, String sort) {
         log.info("Searching for {} with title or creator: '{}'", contentType, query);
