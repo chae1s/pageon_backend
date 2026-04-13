@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -37,7 +38,7 @@ public class EpisodeController {
     ) {
         Long userId = (principalUser != null) ? principalUser.getId() : null;
 
-        Page<EpisodeSummaryResponse> episodes = episodeService.getEpisodeSummaries(userId, contentType, contentId, sort, pageable);
+        Slice<EpisodeSummaryResponse> episodes = episodeService.getEpisodeSummaries(userId, contentType, contentId, sort, pageable);
 
         return ResponseEntity.ok(new PageResponse<>(episodes));
     }

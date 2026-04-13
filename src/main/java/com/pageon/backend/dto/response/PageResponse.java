@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Slice;
 
 import java.util.List;
 
@@ -28,6 +29,16 @@ public class PageResponse<T> {
         this.pageSize = page.getSize();
         this.last = page.isLast();
         this.first = page.isFirst();
+    }
+
+    public PageResponse(Slice<T> slice) {
+        this.content = slice.getContent();
+        this.last = slice.isLast();
+        this.pageNumber = slice.getNumber();
+        this.pageSize = slice.getSize();
+
+        this.totalPages = 0;
+        this.totalElements = 0L;
     }
 
 }

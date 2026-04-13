@@ -102,7 +102,7 @@ public interface WebnovelEpisodeRepository extends JpaRepository<WebnovelEpisode
             FROM webnovel_episodes 
             WHERE webnovel_id IN (:contentIds) AND deleted_at IS NULL AND episode_status = 'PUBLISHED'
         ) as ranked_episodes
-        WHERE row_num <= 20
+        WHERE row_num <= 21
     """, nativeQuery = true)
     List<EpisodeSummaryMapping> findTop20EpisodeByContentIds(@Param("contentIds") List<Long> contentIds);
 

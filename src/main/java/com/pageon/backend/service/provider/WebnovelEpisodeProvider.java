@@ -19,6 +19,7 @@ import com.pageon.backend.service.handler.EpisodeActionHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,7 +45,7 @@ public class WebnovelEpisodeProvider implements EpisodeProvider {
     }
 
     @Override
-    public Page<EpisodeSummaryResponse> findEpisodeSummaries(Long contentId, String sort, Pageable pageable) {
+    public Slice<EpisodeSummaryResponse> findEpisodeSummaries(Long contentId, String sort, Pageable pageable) {
         return webnovelEpisodeRepository.findEpisodeSummaries(contentId, sort, pageable);
     }
 
