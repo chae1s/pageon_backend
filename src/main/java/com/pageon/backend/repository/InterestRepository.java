@@ -12,9 +12,9 @@ import java.util.Optional;
 import java.util.Set;
 
 public interface InterestRepository extends JpaRepository<Interest, Long> {
-    @Query("SELECT COUNT(i.id) > 0 FROM Interest i " +
+    @Query("SELECT 1 FROM Interest i " +
             "WHERE i.user.id = :userId AND i.content.id = :contentId")
-    Boolean existsByUserIdAndContentId(@Param("userId") Long userId, @Param("contentId") Long contentId);
+    Optional<Integer> findExistsByUserIdAndContentId(@Param("userId") Long userId, @Param("contentId") Long contentId);
 
     Optional<Interest> findByUser_IdAndContentId(Long userId, Long contentId);
 

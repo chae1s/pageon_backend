@@ -12,7 +12,9 @@ import org.hibernate.annotations.DynamicUpdate;
 @Getter
 @SuperBuilder
 @DynamicUpdate
-@Table(name = "content_keywords")
+@Table(name = "content_keywords", indexes = {
+        @Index(name = "idx_ck_content_keyword", columnList = "content_id, keyword_id")
+})
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 public class ContentKeyword {

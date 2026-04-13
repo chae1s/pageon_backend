@@ -75,7 +75,7 @@ class ContentServiceTest {
         // given
         ContentDetailResponse contentDetail = mock(ContentDetailResponse.class);
         when(contentRepository.findContentDetail(1L)).thenReturn(Optional.of(contentDetail));
-        when(interestRepository.existsByUserIdAndContentId(1L, 1L)).thenReturn(true);
+        when(interestRepository.findExistsByUserIdAndContentId(1L, 1L)).thenReturn(Optional.of(1));
 
         // when
         ContentDetailResponse result = contentService.getContentDetail(1L, 1L);
@@ -83,7 +83,7 @@ class ContentServiceTest {
         // then
         assertNotNull(result);
         verify(contentRepository).findContentDetail(1L);
-        verify(interestRepository).existsByUserIdAndContentId(1L, 1L);
+        verify(interestRepository).findExistsByUserIdAndContentId(1L, 1L);
         verify(contentDetail).setIsInterested(true);
     }
 
@@ -95,7 +95,7 @@ class ContentServiceTest {
         ContentDetailResponse cachedContent = mock(ContentDetailResponse.class);
         when(valueOperations.get("contents:detail:1")).thenReturn(cachedContent);
 
-        when(interestRepository.existsByUserIdAndContentId(1L, 1L)).thenReturn(true);
+        when(interestRepository.findExistsByUserIdAndContentId(1L, 1L)).thenReturn(Optional.of(1));
 
         // when
         ContentDetailResponse result = contentService.getContentDetail(1L, 1L);
@@ -120,7 +120,7 @@ class ContentServiceTest {
         // then
         assertNotNull(result);
         verify(interestRepository, never())
-                .existsByUserIdAndContentId(any(), any());
+                .findExistsByUserIdAndContentId(any(), any());
         verify(contentDetail).setIsInterested(false);
     }
 
@@ -131,7 +131,7 @@ class ContentServiceTest {
         ContentDetailResponse contentDetail = mock(ContentDetailResponse.class);
 
         when(contentRepository.findContentDetail(1L)).thenReturn(Optional.of(contentDetail));
-        when(interestRepository.existsByUserIdAndContentId(1L, 1L)).thenReturn(false);
+        when(interestRepository.findExistsByUserIdAndContentId(1L, 1L)).thenReturn(Optional.empty());
 
         // when
         contentService.getContentDetail(1L, 1L);
@@ -151,7 +151,7 @@ class ContentServiceTest {
                 () -> contentService.getContentDetail(1L, 1L));
 
         assertEquals(ErrorCode.CONTENT_NOT_FOUND, ErrorCode.valueOf(exception.getErrorCode()));
-        verify(interestRepository, never()).existsByUserIdAndContentId(any(), any());
+        verify(interestRepository, never()).findExistsByUserIdAndContentId(any(), any());
     }
 
     @Test
