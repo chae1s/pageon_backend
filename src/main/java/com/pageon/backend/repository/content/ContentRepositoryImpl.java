@@ -4,14 +4,15 @@ import com.pageon.backend.common.enums.ContentType;
 import com.pageon.backend.common.enums.SerialDay;
 import com.pageon.backend.common.enums.SeriesStatus;
 import com.pageon.backend.common.enums.WorkStatus;
-import com.pageon.backend.dto.response.content.ContentDetailResponse;
-import com.pageon.backend.dto.response.content.KeywordResponse;
-import com.pageon.backend.dto.response.content.QContentDetailResponse;
-import com.pageon.backend.dto.response.content.QKeywordResponse;
+import com.pageon.backend.dto.response.content.*;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.support.PageableExecutionUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -142,5 +143,96 @@ public class ContentRepositoryImpl implements ContentRepositoryCustom {
         }
 
         return responses;
+    }
+
+    @Override
+    public Page<ContentSearchResponse> searchContents(String contentType, String query, Pageable pageable) {
+        List<ContentSearchResponse> responses = queryFactory
+                .select(new QContentSearchResponse(
+                        content.id,
+                        content.title,
+                        content.cover,
+                        content.creator.penName,
+                        content.description,
+                        content.dtype,
+                        content.episodeCount,
+                        content.episodeUpdatedAt,
+                        content.totalAverageRating,
+                        content.totalRatingCount
+                ))
+                .from(content)
+                .join(content.creator)
+                .where(
+                        contentTypeEq(contentType),
+                        isPublished(),
+                        isNotDeleted(),
+                        titleOrPenNameContains(query)
+                )
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        JPAQuery<Long> countQuery = queryFactory
+                .select(content.id.countDistinct())
+                .from(content)
+                .leftJoin(content.contentKeywords, contentKeyword)
+                .where(
+                        contentTypeEq(contentType),
+                        isPublished(),
+                        isNotDeleted(),
+                        titleOrPenNameContains(query)
+                );
+
+        if (!responses.isEmpty()) {
+            List<Long> contentIds = responses.stream()
+                    .map(ContentSearchResponse::getContentId)
+                    .toList();
+
+            List<Tuple> keywords = queryFactory
+                    .select(
+                            contentKeyword.content.id,  // contentId 포함
+                            keyword.id,
+                            keyword.name
+                    )
+                    .from(contentKeyword)
+                    .join(contentKeyword.keyword, keyword)
+                    .where(contentKeyword.content.id.in(contentIds))
+                    .fetch();
+
+            Map<Long, List<KeywordResponse>> keywordMap = keywords.stream()
+                    .filter(t -> t.get(contentKeyword.content.id) != null)
+                    .collect(Collectors.groupingBy(
+                            t -> Objects.requireNonNull(t.get(contentKeyword.content.id)),
+                            Collectors.mapping(
+                                    t -> new KeywordResponse(
+                                            t.get(keyword.id),
+                                            t.get(keyword.name)
+                                    ),
+                                    Collectors.toList()
+                            )
+                    ));
+
+            responses.forEach(response ->
+                    response.setKeywords(keywordMap.getOrDefault(response.getContentId(), List.of()))
+            );
+        }
+
+        return PageableExecutionUtils.getPage(responses, pageable, countQuery::fetchOne);
+    }
+
+    private BooleanExpression contentTypeEq(String contentType) {
+        if (contentType.equals("all")) {
+            return null;
+        }
+
+        return content.dtype.eq(ContentType.fromUrlPath(contentType).name());
+    }
+
+    private BooleanExpression titleOrPenNameContains(String query) {
+        if (query == null || query.isBlank()) {
+            return null;
+        }
+
+        return content.title.contains(query).or(content.creator.penName.contains(query));
     }
 }

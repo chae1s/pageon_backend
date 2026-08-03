@@ -88,10 +88,7 @@ spring:
           auth: true
     default-encoding: UTF-8
     port: 587
-  data:
-    redis:
-      host: 52.79.176.106
-      port: 6379
+
   profiles:
     active: dev
   config:

@@ -49,7 +49,7 @@ public class AuthService {
             throw new CustomException(ErrorCode.INVALID_TOKEN);
         }
 
-        if (tokenInfo == null) {
+        if (tokenInfo == null || !tokenInfo.getRefreshToken().equals(refreshToken)) {
             log.error("tokenInfo is null");
             throw new CustomException(ErrorCode.INVALID_TOKEN);
         }

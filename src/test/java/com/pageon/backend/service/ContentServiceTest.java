@@ -4,6 +4,7 @@ import com.pageon.backend.common.enums.ContentType;
 import com.pageon.backend.common.enums.SerialDay;
 import com.pageon.backend.dto.response.ContentResponse;
 import com.pageon.backend.dto.response.content.ContentDetailResponse;
+import com.pageon.backend.dto.response.content.ContentSearchResponse;
 import com.pageon.backend.entity.*;
 import com.pageon.backend.exception.CustomException;
 import com.pageon.backend.exception.ErrorCode;
@@ -200,7 +201,7 @@ class ContentServiceTest {
         doReturn(contents).when(contentProvider).findByTitleOrPenName(eq("웹소설"), any(Pageable.class));
 
         // when
-        Page<ContentResponse.Search> result = contentService.searchContentsByTitleOrAuthor("webnovels", "웹소설", PageRequest.of(0, 10), "latest");
+        Page<ContentSearchResponse> result = contentService.searchContentsByTitleOrAuthor("webnovels", "웹소설", PageRequest.of(0, 10), "latest");
 
         // then
         assertNotNull(result);
