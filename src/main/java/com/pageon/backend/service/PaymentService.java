@@ -35,6 +35,7 @@ public class PaymentService {
     private final IdempotentService idempotentService;
     private final RedisTemplate<String, Object> redisTemplate;
     private final TossPaymentClient tossPaymentClient;
+    private final PaymentFailureLogger paymentFailureLogger;
 
     @Transactional
     public PaymentResponse.Ready readyPayment(Long userId, PaymentRequest.Ready request) {
@@ -101,8 +102,7 @@ public class PaymentService {
         }
 
         if (!transaction.getAmount().equals(confirm.getAmount())) {
-            transaction.failedPayment();
-            pointTransactionRepository.save(transaction);
+            paymentFailureLogger.logFailure(transaction);
             throw new CustomException(ErrorCode.AMOUNT_NOT_MATCH);
         }
 
@@ -127,8 +127,7 @@ public class PaymentService {
             return tossPaymentClient.confirmPaymentConnection(confirm);
 
         } catch (Exception e) {
-            transaction.failedPayment();
-            pointTransactionRepository.save(transaction);
+            paymentFailureLogger.logFailure(transaction);
             throw new CustomException(ErrorCode.PAYMENT_API_FAILED);
         }
     }
@@ -164,7 +163,7 @@ public class PaymentService {
             throw new CustomException(ErrorCode.PAYMENT_NOT_COMPLETED);
         }
 
-        if (user.getPointBalance() <= transaction.getAmount()) {
+        if (user.getPointBalance() < transaction.getAmount()) {
             throw new CustomException(ErrorCode.INSUFFICIENT_POINTS_FOR_REFUND);
         }
 
