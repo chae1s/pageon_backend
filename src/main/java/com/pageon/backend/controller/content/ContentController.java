@@ -3,6 +3,7 @@ package com.pageon.backend.controller.content;
 import com.pageon.backend.dto.response.ContentResponse;
 import com.pageon.backend.dto.response.PageResponse;
 import com.pageon.backend.dto.response.content.ContentDetailResponse;
+import com.pageon.backend.dto.response.content.ContentSearchResponse;
 import com.pageon.backend.security.PrincipalUser;
 import com.pageon.backend.service.ContentService;
 import com.pageon.backend.service.RankingService;
@@ -67,13 +68,13 @@ public class ContentController {
     }
 
     @GetMapping(params = "query")
-    public ResponseEntity<PageResponse<ContentResponse.Search>> searchByQuery(
+    public ResponseEntity<PageResponse<ContentSearchResponse>> searchByQuery(
             @PathVariable String contentType,
             @RequestParam("query") String query,
             @PageableDefault(size = 60) Pageable pageable,
             @RequestParam("sort") String sort
     ) {
-        Page<ContentResponse.Search> contents = contentService.searchContentsByTitleOrAuthor(contentType, query, pageable, sort);
+        Page<ContentSearchResponse> contents = contentService.searchContentsByTitleOrAuthor(contentType, query, pageable, sort);
 
         return ResponseEntity.ok(new PageResponse<>(contents));
     }

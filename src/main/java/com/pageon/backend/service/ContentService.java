@@ -5,15 +5,14 @@ import com.pageon.backend.common.enums.ContentType;
 import com.pageon.backend.common.enums.SerialDay;
 import com.pageon.backend.common.utils.PageableUtil;
 import com.pageon.backend.dto.response.ContentResponse;
-import com.pageon.backend.dto.response.EpisodeResponse;
 import com.pageon.backend.dto.response.PageResponse;
 import com.pageon.backend.dto.response.content.ContentDetailResponse;
+import com.pageon.backend.dto.response.content.ContentSearchResponse;
 import com.pageon.backend.entity.*;
 import com.pageon.backend.exception.CustomException;
 import com.pageon.backend.exception.ErrorCode;
 import com.pageon.backend.repository.*;
 import com.pageon.backend.repository.content.ContentRepository;
-import com.pageon.backend.security.PrincipalUser;
 import com.pageon.backend.service.handler.EpisodeActionHandler;
 import com.pageon.backend.service.provider.ContentProvider;
 import lombok.RequiredArgsConstructor;
@@ -44,24 +43,6 @@ public class ContentService {
     private final EpisodeActionHandler actionHandler;
     private final RedisTemplate<String, Object> redisTemplate;
 
-    @Transactional(readOnly = true)
-    public ContentResponse.Detail getContentDetail(PrincipalUser principalUser, String contentType, Long contentId) {
-
-        log.info("Fetching {} details for content ID: {}", contentType, contentId);
-        ContentProvider provider = getProvider(contentType);
-
-        Content content = provider.findById(contentId).orElseThrow(
-                () -> new CustomException(ErrorCode.CONTENT_NOT_FOUND)
-        );
-
-        Long userId = (principalUser != null) ? principalUser.getId() : null;
-        List<EpisodeResponse.Summary> episodes = provider.findEpisodes(userId, contentId);
-
-        Boolean isInterested = (userId != null) && interestRepository.findExistsByUserIdAndContentId(userId, contentId).isPresent();
-
-        log.info("Successfully retrieved {}: {} (ID: {})", contentType, content.getTitle(), contentId);
-        return ContentResponse.Detail.fromEntity(content, episodes, isInterested);
-    }
 
     public ContentDetailResponse getContentDetail(Long userId, Long contentId) {
 
@@ -99,7 +80,7 @@ public class ContentService {
 
     @ExecutionTimer
     @Transactional(readOnly = true)
-    public Page<ContentResponse.Search> searchContentsByTitleOrAuthor(String contentType, String query, Pageable pageable, String sort) {
+    public Page<ContentSearchResponse> searchContentsByTitleOrAuthor(String contentType, String query, Pageable pageable, String sort) {
         log.info("Searching for {} with title or creator: '{}'", contentType, query);
         if (query.isBlank()) {
             throw new CustomException(ErrorCode.INVALID_SEARCH_QUERY);
@@ -107,11 +88,11 @@ public class ContentService {
         Pageable searchPageable = PageableUtil.searchPageable(pageable, sort);
         ContentProvider provider = getProvider(contentType);
 
-        Page<? extends Content> contents = provider.findByTitleOrPenName(query, searchPageable);
+        Page<ContentSearchResponse> contents = contentRepository.searchContents(contentType, query, searchPageable);
 
         log.info("Search completed. Found {} {} for title or creator: '{}'", contents.getTotalElements(), contentType, query);
 
-        return contents.map(ContentResponse.Search::fromEntity);
+        return contents;
     }
 
 
