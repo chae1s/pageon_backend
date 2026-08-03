@@ -62,9 +62,11 @@ public class CreatorSettlementService {
                 .stream()
                 .collect(Collectors.toMap(Creator::getId, creator -> creator));
 
+        List<Long> succeededCreatorIds = new ArrayList<>();
         for (SettlementTarget target : targets) {
             try {
                 if (settlementRepository.existsSettlement(target.creatorId(), periodStart, periodEnd)) {
+                    succeededCreatorIds.add(target.creatorId());
                     continue;
                 }
                 Creator creator = creatorMap.get(target.creatorId());
@@ -73,6 +75,7 @@ public class CreatorSettlementService {
                 }
 
                 settlements.add(registerSettlement(creator, target.totalPoint(), scheduledAt, periodStart, periodEnd));
+                succeededCreatorIds.add(target.creatorId());
             } catch (Exception e) {
                 log.error("creatorId: {} 정산 실패 - {}", target.creatorId(), e.getMessage());
             }
@@ -80,8 +83,8 @@ public class CreatorSettlementService {
 
         settlementRepository.saveAll(settlements);
 
-        if (!creatorIds.isEmpty()) {
-            creatorEarningRepository.bulkUpdateStatusToSettled(creatorIds, periodStart, periodEnd);
+        if (!succeededCreatorIds.isEmpty()) {
+            creatorEarningRepository.bulkUpdateStatusToSettled(succeededCreatorIds, periodStart, periodEnd);
         }
     }
 
